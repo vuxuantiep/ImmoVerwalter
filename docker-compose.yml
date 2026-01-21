@@ -1,0 +1,12 @@
+
+version: '3.8'
+
+services:
+  immo-app:
+    build: .
+    container_name: immo-manager-pro
+    ports:
+      - "8080:80"
+    environment:
+      - API_KEY=${API_KEY}
+    restart: always

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Property, Tenant, Transaction, Handyman, Owner, Stakeholder, HouseType, TransactionType, Reminder, ReminderCategory } from './types.ts';
+import { View, Property, Tenant, Transaction, Handyman, Owner, Stakeholder, HouseType, Reminder, ReminderCategory } from './types.ts';
 import Sidebar from './Sidebar.tsx';
 import Dashboard from './Dashboard.tsx';
 import PropertiesList from './PropertiesList.tsx';

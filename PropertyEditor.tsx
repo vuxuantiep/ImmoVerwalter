@@ -56,8 +56,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
   }, [editingUnitId, defaultTotalLivingSpace]);
 
   const calculateItemShare = (total: number, keyType: AllocationKey, uSize: number, tSpace: number) => {
-    if (tSpace === 0) return 0;
-    const share = keyType === 'm2' ? (uSize / tSpace) * total : (1 / (totalUnitsCount || 1)) * total;
+    if (tSpace === 0 || totalUnitsCount === 0) return 0;
+    const share = keyType === 'm2' ? (uSize / tSpace) * total : (1 / totalUnitsCount) * total;
     return Math.round(share * 100) / 100;
   };
 
@@ -178,7 +178,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
           <TabButton active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} label="Finanzen" icon="fa-landmark" />
         </div>
 
-        {/* Content */}
+        {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 bg-slate-50/20 custom-scrollbar">
           {activeTab === 'general' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in">
@@ -257,52 +257,65 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
                   </tbody>
                 </table>
               </div>
-              <button onClick={() => setLocalTransactions([...localTransactions, { id: 't'+Date.now(), propertyId: editedProperty.id, type: TransactionType.EXPENSE, category: '', amount: 0, date: new Date().toISOString().split('T')[0], description: '', isUtilityRelevant: true }])} className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-[9px] uppercase hover:bg-black transition shadow-md">Ausgabe hinzufügen +</button>
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                 <button onClick={() => setLocalTransactions([...localTransactions, { id: 't'+Date.now(), propertyId: editedProperty.id, type: TransactionType.EXPENSE, category: '', amount: 0, date: new Date().toISOString().split('T')[0], description: '', isUtilityRelevant: true }])} className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-[9px] uppercase hover:bg-black transition shadow-md">Ausgabe hinzufügen +</button>
+                 <button onClick={() => setActiveTab('general')} className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-2 rounded-lg font-black text-[9px] uppercase shadow-lg hover:bg-emerald-700 transition">Änderungen für Ausgaben übernehmen</button>
+              </div>
             </div>
           )}
 
           {activeTab === 'meters' && (
-             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in">
-                {editedProperty.meterReadings?.map(meter => (
-                  <div key={meter.id} className="bg-white p-3 rounded-lg border border-slate-200 relative">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-[8px] font-black text-indigo-600 uppercase tracking-widest">{meter.type} Hauptzähler</h4>
-                      <button onClick={() => updateField('meterReadings', editedProperty.meterReadings?.filter(m => m.id !== meter.id))} className="text-slate-300 hover:text-red-500"><i className="fa-solid fa-trash text-[10px]"></i></button>
-                    </div>
-                    <div className="space-y-2">
-                      <InputField label="Nummer" value={meter.serialNumber} onChange={(v: string) => updateField('meterReadings', editedProperty.meterReadings?.map(m => m.id === meter.id ? {...m, serialNumber: v} : m))} />
-                      <InputField label="Stand" type="number" value={meter.value} onChange={(v: string) => updateField('meterReadings', editedProperty.meterReadings?.map(m => m.id === meter.id ? {...m, value: parseFloat(v)} : m))} />
-                    </div>
-                  </div>
-                ))}
-                <button onClick={() => addMeterReading(MeterType.WATER, true)} className="border border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-slate-300 hover:text-indigo-600 transition shadow-sm">
-                  <i className="fa-solid fa-plus mb-1"></i><span className="text-[8px] font-bold uppercase">Zähler</span>
-                </button>
+             <div className="space-y-6 animate-in fade-in">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                   {editedProperty.meterReadings?.map(meter => (
+                     <div key={meter.id} className="bg-white p-3 rounded-lg border border-slate-200 relative">
+                       <div className="flex justify-between items-center mb-2">
+                         <h4 className="text-[8px] font-black text-indigo-600 uppercase tracking-widest">{meter.type} Hauptzähler</h4>
+                         <button onClick={() => updateField('meterReadings', editedProperty.meterReadings?.filter(m => m.id !== meter.id))} className="text-slate-300 hover:text-red-500"><i className="fa-solid fa-trash text-[10px]"></i></button>
+                       </div>
+                       <div className="space-y-2">
+                         <InputField label="Nummer" value={meter.serialNumber} onChange={(v: string) => updateField('meterReadings', editedProperty.meterReadings?.map(m => m.id === meter.id ? {...m, serialNumber: v} : m))} />
+                         <InputField label="Stand" type="number" value={meter.value} onChange={(v: string) => updateField('meterReadings', editedProperty.meterReadings?.map(m => m.id === meter.id ? {...m, value: parseFloat(v)} : m))} />
+                       </div>
+                     </div>
+                   ))}
+                   <button onClick={() => addMeterReading(MeterType.WATER, true)} className="border border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-slate-300 hover:text-indigo-600 transition shadow-sm">
+                     <i className="fa-solid fa-plus mb-1"></i><span className="text-[8px] font-bold uppercase">Zähler</span>
+                   </button>
+                </div>
+                <div className="flex justify-end">
+                   <button onClick={() => setActiveTab('general')} className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-black text-[9px] uppercase shadow-lg hover:bg-emerald-700 transition">Änderungen für Zähler übernehmen</button>
+                </div>
              </div>
           )}
 
           {activeTab === 'finance' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-in fade-in">
-              {editedProperty.loans?.map(loan => (
-                <div key={loan.id} className="bg-white p-3 rounded-lg border border-slate-200 space-y-3 shadow-sm">
-                  <div className="flex justify-between items-center">
-                    <input className="font-bold text-indigo-600 uppercase text-[9px] bg-white border border-slate-100 p-1 rounded outline-none" value={loan.bankName} onChange={e => setEditedProperty(prev => ({ ...prev, loans: prev.loans?.map(l => l.id === loan.id ? { ...l, bankName: e.target.value } : l) }))} />
-                    <button onClick={() => updateField('loans', editedProperty.loans?.filter(l => l.id !== loan.id))} className="text-slate-300 hover:text-red-500"><i className="fa-solid fa-trash text-[10px]"></i></button>
+            <div className="space-y-6 animate-in fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {editedProperty.loans?.map(loan => (
+                  <div key={loan.id} className="bg-white p-3 rounded-lg border border-slate-200 space-y-3 shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <input className="font-bold text-indigo-600 uppercase text-[9px] bg-white border border-slate-100 p-1 rounded outline-none" value={loan.bankName} onChange={e => setEditedProperty(prev => ({ ...prev, loans: prev.loans?.map(l => l.id === loan.id ? { ...l, bankName: e.target.value } : l) }))} />
+                      <button onClick={() => updateField('loans', editedProperty.loans?.filter(l => l.id !== loan.id))} className="text-slate-300 hover:text-red-500"><i className="fa-solid fa-trash text-[10px]"></i></button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <InputField label="Saldo €" type="number" value={loan.currentBalance} onChange={(v: string) => updateField('loans', editedProperty.loans?.map(l => l.id === loan.id ? {...l, currentBalance: parseFloat(v)} : l))} />
+                      <InputField label="Zins %" type="number" value={loan.interestRate} onChange={(v: string) => updateField('loans', editedProperty.loans?.map(l => l.id === loan.id ? {...l, interestRate: parseFloat(v)} : l))} />
+                      <InputField label="Rate €" type="number" value={loan.monthlyInstallment} onChange={(v: string) => updateField('loans', editedProperty.loans?.map(l => l.id === loan.id ? {...l, monthlyInstallment: parseFloat(v)} : l))} />
+                      <InputField label="Ende" type="date" value={loan.fixedUntil} onChange={(v: string) => updateField('loans', editedProperty.loans?.map(l => l.id === loan.id ? {...l, fixedUntil: v} : l))} />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <InputField label="Saldo €" type="number" value={loan.currentBalance} onChange={(v: string) => updateField('loans', editedProperty.loans?.map(l => l.id === loan.id ? {...l, currentBalance: parseFloat(v)} : l))} />
-                    <InputField label="Zins %" type="number" value={loan.interestRate} onChange={(v: string) => updateField('loans', editedProperty.loans?.map(l => l.id === loan.id ? {...l, interestRate: parseFloat(v)} : l))} />
-                    <InputField label="Rate €" type="number" value={loan.monthlyInstallment} onChange={(v: string) => updateField('loans', editedProperty.loans?.map(l => l.id === loan.id ? {...l, monthlyInstallment: parseFloat(v)} : l))} />
-                    <InputField label="Ende" type="date" value={loan.fixedUntil} onChange={(v: string) => updateField('loans', editedProperty.loans?.map(l => l.id === loan.id ? {...l, fixedUntil: v} : l))} />
-                  </div>
-                </div>
-              ))}
-              <button onClick={() => updateField('loans', [...(editedProperty.loans || []), { id: 'l'+Date.now(), bankName: 'Neue Bank', totalAmount: 0, currentBalance: 0, interestRate: 0, repaymentRate: 0, fixedUntil: '', monthlyInstallment: 0 }])} className="border border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-slate-300 hover:text-indigo-600 transition uppercase font-bold text-[8px] shadow-sm"><i className="fa-solid fa-plus mb-1"></i>Kredit +</button>
+                ))}
+                <button onClick={() => updateField('loans', [...(editedProperty.loans || []), { id: 'l'+Date.now(), bankName: 'Neue Bank', totalAmount: 0, currentBalance: 0, interestRate: 0, repaymentRate: 0, fixedUntil: '', monthlyInstallment: 0 }])} className="border border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-slate-300 hover:text-indigo-600 transition uppercase font-bold text-[8px] shadow-sm"><i className="fa-solid fa-plus mb-1"></i>Kredit +</button>
+              </div>
+              <div className="flex justify-end">
+                 <button onClick={() => setActiveTab('general')} className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-black text-[9px] uppercase shadow-lg hover:bg-emerald-700 transition">Änderungen für Finanzen übernehmen</button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Global Action Footer */}
         <div className="p-3 border-t flex justify-end space-x-2 bg-white shrink-0">
           <button onClick={onCancel} className="px-4 text-[10px] font-bold text-slate-500 hover:text-slate-700">Abbrechen</button>
           <button onClick={() => onSave(editedProperty, localTransactions)} className="bg-indigo-600 text-white px-5 py-2 rounded-lg font-black text-[10px] uppercase shadow-lg hover:bg-indigo-700 transition">Alle Änderungen Speichern</button>
@@ -443,7 +456,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
               </div>
 
               <div className="p-4 border-t bg-slate-50 flex justify-end shrink-0">
-                  <button onClick={() => setEditingUnitId(null)} className="bg-slate-900 text-white px-6 py-2.5 rounded-lg font-black text-xs uppercase shadow-md hover:bg-black transition active:scale-95">Änderungen Übernehmen</button>
+                  <button onClick={() => setEditingUnitId(null)} className="bg-slate-900 text-white px-6 py-2.5 rounded-lg font-black text-xs uppercase shadow-md hover:bg-black transition active:scale-95">Änderungen für Einheit übernehmen</button>
               </div>
            </div>
         </div>
@@ -492,7 +505,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
                       <tr>
                         <th className="p-2 border border-black text-left">Kostenart</th>
                         <th className="p-2 border border-black text-right">Haus Summe</th>
-                        <th className="p-2 border border-black text-center">Key</th>
+                        <th className="p-2 border border-black text-center">Verteiler</th>
                         <th className="p-2 border border-black text-right">Anteil Mieter</th>
                       </tr>
                     </thead>
@@ -508,8 +521,13 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
                             <span className="hidden print:inline">{item.total.toFixed(2)} €</span>
                           </td>
                           <td className="p-1.5 border border-black text-center text-[7pt] text-slate-700">
-                             <select className="bg-transparent border-none no-print outline-none text-center font-bold text-black p-0" value={item.keyType} onChange={(e) => updateBreakdownItem(item.id, 'keyType', e.target.value as AllocationKey)}>
-                                <option value="m2">m²</option><option value="unit">WE</option>
+                             <select 
+                                className="bg-slate-100 border border-slate-300 rounded px-1 no-print outline-none text-center font-black text-indigo-700 p-0 shadow-sm" 
+                                value={item.keyType} 
+                                onChange={(e) => updateBreakdownItem(item.id, 'keyType', e.target.value as AllocationKey)}
+                             >
+                                <option value="m2">m²</option>
+                                <option value="unit">WE</option>
                              </select>
                              <span className="hidden print:inline">{item.keyLabel}</span>
                           </td>

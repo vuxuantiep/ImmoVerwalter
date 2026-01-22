@@ -1,14 +1,14 @@
 
 import React, { useState } from 'react';
-import { View, Property, Tenant, Transaction, Handyman, Owner, Stakeholder, HouseType, Reminder, ReminderCategory } from './types';
-import Sidebar from './Sidebar';
-import Dashboard from './Dashboard';
-import PropertiesList from './PropertiesList';
-import TenantManager from './TenantManager';
-import FinanceTracker from './FinanceTracker';
-import ContactManager from './ContactManager';
-import AITools from './AITools';
-import InvestorDashboard from './InvestorDashboard';
+import { View, Property, Tenant, Transaction, HouseType, Reminder, ReminderCategory } from './types.ts';
+import Sidebar from './Sidebar.tsx';
+import Dashboard from './Dashboard.tsx';
+import PropertiesList from './PropertiesList.tsx';
+import TenantManager from './TenantManager.tsx';
+import FinanceTracker from './FinanceTracker.tsx';
+import ContactManager from './ContactManager.tsx';
+import AITools from './AITools.tsx';
+import InvestorDashboard from './InvestorDashboard.tsx';
 
 const initialProperties: Property[] = [
   {
@@ -49,29 +49,15 @@ const App: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [handymen, setHandymen] = useState<Handyman[]>([]);
-  const [owners, setOwners] = useState<Owner[]>([]);
-  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const setView = (v: View, params: any = null) => {
     setCurrentView(v);
     setViewParams(params);
     setIsSidebarOpen(false);
-    window.scrollTo(0, 0);
   };
 
   const addTransaction = (t: Transaction) => setTransactions(prev => [...prev, t]);
-
-  const viewLabels: Record<View, string> = {
-    dashboard: 'Home',
-    properties: 'Objekte',
-    tenants: 'Mieter',
-    finances: 'Finanzen',
-    contacts: 'Kontakte',
-    tools: 'KI-Assistenz',
-    investor: 'Investor'
-  };
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -84,90 +70,40 @@ const App: React.FC = () => {
       )}
       
       <main className="flex-1 p-4 md:p-8 pb-32 lg:pb-8">
-        <header className="mb-8 flex justify-between items-center bg-white/80 backdrop-blur shadow-sm lg:shadow-none p-4 rounded-2xl lg:p-0 lg:bg-transparent sticky top-4 z-30 lg:static">
+        <header className="mb-8 flex justify-between items-center bg-white/80 backdrop-blur shadow-sm p-4 rounded-2xl lg:bg-transparent lg:shadow-none">
           <div className="flex items-center space-x-4">
-            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-600 active:scale-90 transition-transform">
-              <i className="fa-solid fa-bars-staggered text-xl"></i>
+            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-600">
+              <i className="fa-solid fa-bars-staggered"></i>
             </button>
-            <div>
-              <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">{viewLabels[currentView]}</h1>
-              <p className="hidden md:block text-slate-500 font-medium text-sm">Willkommen bei ImmoManager Pro.</p>
-            </div>
+            <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">ImmoManager Pro</h1>
           </div>
-          <div className="flex items-center space-x-3">
-             <button onClick={() => setView('tools')} className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition active:scale-95">
-                <i className="fa-solid fa-wand-magic-sparkles"></i>
-             </button>
-             <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-200">
-               VM
-             </div>
-          </div>
+          <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold">VM</div>
         </header>
 
         <div className="max-w-7xl mx-auto">
-          {currentView === 'dashboard' && (
-            <Dashboard 
-              properties={properties} 
-              tenants={tenants} 
-              transactions={transactions} 
-              reminders={reminders}
-              setReminders={setReminders}
-              setView={setView}
-            />
-          )}
-          {currentView === 'properties' && (
-            <PropertiesList 
-              properties={properties} 
-              setProperties={setProperties} 
-              onGenerateExpose={(id) => setView('tools', { tab: 'expose', propertyId: id })}
-              setView={setView}
-            />
-          )}
-          {currentView === 'tenants' && (
-            <TenantManager tenants={tenants} setTenants={setTenants} properties={properties} transactions={transactions} />
-          )}
-          {currentView === 'finances' && (
-            <FinanceTracker transactions={transactions} addTransaction={addTransaction} properties={properties} />
-          )}
-          {currentView === 'investor' && (
-            <InvestorDashboard properties={properties} transactions={transactions} setProperties={setProperties} />
-          )}
-          {currentView === 'contacts' && (
-            <ContactManager 
-              handymen={handymen} setHandymen={setHandymen} 
-              owners={owners} setOwners={setOwners} 
-              stakeholders={stakeholders} setStakeholders={setStakeholders}
-              tenants={tenants} setTenants={setTenants}
-            />
-          )}
-          {currentView === 'tools' && (
-            <AITools 
-              properties={properties} 
-              setProperties={setProperties}
-              tenants={tenants} 
-              transactions={transactions} 
-              initialPropertyId={viewParams?.propertyId}
-              initialTab={viewParams?.tab}
-            />
-          )}
+          {currentView === 'dashboard' && <Dashboard properties={properties} tenants={tenants} transactions={transactions} reminders={reminders} setReminders={setReminders} setView={setView} />}
+          {currentView === 'properties' && <PropertiesList properties={properties} setProperties={setProperties} setView={setView} />}
+          {currentView === 'tenants' && <TenantManager tenants={tenants} setTenants={setTenants} properties={properties} transactions={transactions} />}
+          {currentView === 'finances' && <FinanceTracker transactions={transactions} addTransaction={addTransaction} properties={properties} />}
+          {currentView === 'investor' && <InvestorDashboard properties={properties} transactions={transactions} setProperties={setProperties} />}
+          {currentView === 'contacts' && <ContactManager handymen={[]} setHandymen={() => {}} owners={[]} setOwners={() => {}} stakeholders={[]} setStakeholders={() => {}} tenants={tenants} setTenants={setTenants} />}
+          {currentView === 'tools' && <AITools properties={properties} setProperties={setProperties} tenants={tenants} transactions={transactions} initialPropertyId={viewParams?.propertyId} initialTab={viewParams?.tab} />}
         </div>
       </main>
 
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 px-6 pt-3 pb-8 flex justify-between items-center z-40 shadow-[0_-8px_20px_rgba(0,0,0,0.05)]">
-        <NavIconButton active={currentView === 'dashboard'} onClick={() => setView('dashboard')} icon="fa-house" label="Home" />
-        <NavIconButton active={currentView === 'properties'} onClick={() => setView('properties')} icon="fa-building" label="Objekte" />
-        <NavIconButton active={currentView === 'finances'} onClick={() => setView('finances')} icon="fa-wallet" label="Finanzen" />
-        <NavIconButton active={currentView === 'contacts'} onClick={() => setView('contacts')} icon="fa-address-book" label="Kontakte" />
-        <NavIconButton active={currentView === 'tools'} onClick={() => setView('tools')} icon="fa-robot" label="KI" />
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t px-6 py-3 flex justify-between items-center z-40 shadow-lg">
+        <NavIconButton active={currentView === 'dashboard'} onClick={() => setView('dashboard')} icon="fa-house" />
+        <NavIconButton active={currentView === 'properties'} onClick={() => setView('properties')} icon="fa-building" />
+        <NavIconButton active={currentView === 'finances'} onClick={() => setView('finances')} icon="fa-wallet" />
+        <NavIconButton active={currentView === 'tools'} onClick={() => setView('tools')} icon="fa-robot" />
       </nav>
     </div>
   );
 };
 
-const NavIconButton = ({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: string, label: string }) => (
-  <button onClick={onClick} className={`flex flex-col items-center space-y-1 transition-all ${active ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
+const NavIconButton = ({ active, onClick, icon }: any) => (
+  <button onClick={onClick} className={`p-2 transition-all ${active ? 'text-indigo-600' : 'text-slate-400'}`}>
     <i className={`fa-solid ${icon} text-xl`}></i>
-    <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
   </button>
 );
 

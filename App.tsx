@@ -67,6 +67,7 @@ const App: React.FC = () => {
   const [stakeholders, setStakeholders] = useState<any[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
+  const [showImpressum, setShowImpressum] = useState(false);
 
   const setView = (v: View, params: any = null) => {
     setCurrentView(v);
@@ -77,7 +78,6 @@ const App: React.FC = () => {
   const handleUpdateProperty = (updated: Property, updatedTransactions?: Transaction[]) => {
     setProperties(prev => prev.map(p => p.id === updated.id ? updated : p));
     if (updatedTransactions) {
-      // Ersetze alle Transaktionen für dieses Objekt durch die aktualisierten lokalen Versionen
       setTransactions(prev => {
         const otherTransactions = prev.filter(t => t.propertyId !== updated.id);
         const objectTransactions = updatedTransactions.filter(t => t.propertyId === updated.id);
@@ -88,7 +88,6 @@ const App: React.FC = () => {
   };
 
   const addTransaction = (t: Transaction) => setTransactions(prev => [...prev, t]);
-
   const currentEditingProperty = properties.find(p => p.id === editingPropertyId);
 
   return (
@@ -97,8 +96,8 @@ const App: React.FC = () => {
         <Sidebar currentView={currentView} setView={setView} />
       </div>
 
-      <main className="flex-1 p-4 md:p-8 pb-32 lg:pb-8">
-        <header className="mb-8 flex justify-between items-center">
+      <main className="flex-1 flex flex-col p-4 md:p-8 pb-32 lg:pb-8 h-screen overflow-y-auto">
+        <header className="mb-8 flex justify-between items-center shrink-0">
           <div className="flex items-center space-x-4">
             <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-600">
               <i className="fa-solid fa-bars-staggered"></i>
@@ -107,7 +106,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto flex-1 w-full">
           {currentView === 'dashboard' && (
             <Dashboard 
               properties={properties} tenants={tenants} transactions={transactions} 
@@ -118,12 +117,69 @@ const App: React.FC = () => {
           {currentView === 'properties' && (
             <PropertiesList properties={properties} setProperties={setProperties} setView={setView} onEditProperty={setEditingPropertyId} />
           )}
+          {currentView === 'tenants' && (
+            <TenantManager tenants={tenants} setTenants={setTenants} properties={properties} transactions={transactions} />
+          )}
           {currentView === 'finances' && <FinanceTracker transactions={transactions} addTransaction={addTransaction} properties={properties} />}
           {currentView === 'contacts' && <ContactManager handymen={handymen} setHandymen={setHandymen} owners={owners} setOwners={setOwners} stakeholders={stakeholders} setStakeholders={setStakeholders} tenants={tenants} setTenants={setTenants} />}
           {currentView === 'tools' && <AITools properties={properties} setProperties={setProperties} tenants={tenants} transactions={transactions} initialPropertyId={viewParams?.propertyId} initialTab={viewParams?.tab} />}
           {currentView === 'investor' && <InvestorDashboard properties={properties} transactions={transactions} setProperties={setProperties} />}
         </div>
+
+        {/* Global Footer */}
+        <footer className="mt-12 pt-8 border-t border-slate-200 text-slate-400 shrink-0">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
+            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
+              <span>© {new Date().getFullYear()} Vu Xuan Tiep</span>
+              <span className="hidden md:inline text-slate-200">|</span>
+              <span>Alle Rechte vorbehalten</span>
+            </div>
+            <div className="flex items-center space-x-6">
+              <button onClick={() => setShowImpressum(true)} className="hover:text-indigo-600 transition">Impressum</button>
+              <a href="https://itiep.de" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition">itiep.de</a>
+              <a href="mailto:vuxuantiep@gmail.com" className="hover:text-indigo-600 transition">Kontakt</a>
+            </div>
+          </div>
+        </footer>
       </main>
+
+      {/* Impressum Modal */}
+      {showImpressum && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+             <div className="bg-slate-900 p-6 flex justify-between items-center text-white">
+                <h3 className="text-xl font-black uppercase tracking-tight">Impressum</h3>
+                <button onClick={() => setShowImpressum(false)} className="p-2 hover:bg-white/10 rounded-full transition">
+                   <i className="fa-solid fa-xmark text-xl"></i>
+                </button>
+             </div>
+             <div className="p-8 space-y-6 text-slate-700">
+                <section>
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Angaben gemäß § 5 TMG</h4>
+                   <p className="font-bold text-lg">Vu Xuan Tiep</p>
+                   <p className="text-sm">Informatik-Dienstleistungen & Immobilien-Technologien</p>
+                </section>
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Kontakt</h4>
+                      <p className="text-sm font-medium">Telefon: +49 178 1868683</p>
+                      <p className="text-sm font-medium">E-Mail: vuxuantiep@gmail.com</p>
+                   </div>
+                   <div>
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Webseite</h4>
+                      <a href="https://itiep.de" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-indigo-600 hover:underline">https://itiep.de</a>
+                   </div>
+                </section>
+                <div className="pt-6 border-t border-slate-100">
+                   <p className="text-[9px] text-slate-400 leading-relaxed italic">
+                      Haftungsausschluss: Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
+                   </p>
+                </div>
+                <button onClick={() => setShowImpressum(false)} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-black transition">Schließen</button>
+             </div>
+          </div>
+        </div>
+      )}
 
       {currentEditingProperty && (
         <PropertyEditor 

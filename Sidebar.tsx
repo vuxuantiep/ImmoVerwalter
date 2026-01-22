@@ -25,11 +25,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
           <div className="bg-indigo-500 p-2 rounded-lg">
             <i className="fa-solid fa-house-chimney text-white text-xl"></i>
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">ImmoManager-Tiep</span>
+          <span className="text-xl font-bold text-white tracking-tight">ImmoTiep</span>
         </div>
       </div>
       
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
         {menuItems.map((item) => (
           <button
             key={item.id}
@@ -46,14 +46,46 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
         ))}
       </nav>
 
-      <div className="p-6 border-t border-slate-800">
-        <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Pro Plan</p>
-          <p className="text-xs text-slate-300 leading-relaxed mb-4">Nutzen Sie alle KI-Funktionen ohne Limit.</p>
-          <button className="w-full bg-slate-700 hover:bg-indigo-600 text-white text-xs font-bold py-2 rounded-lg transition-colors">
-            Upgrade
-          </button>
+      {/* Developer & Contact Section */}
+      <div className="p-4 border-t border-slate-800">
+        <div className="bg-slate-800/40 rounded-2xl p-4 border border-slate-700/50">
+          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Entwickler & Kontakt</p>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <i className="fa-solid fa-user-check text-xs"></i>
+              </div>
+              <p className="text-xs font-black text-white truncate">Vu Xuan Tiep</p>
+            </div>
+            
+            <a href="tel:+491781868683" className="flex items-center space-x-3 group hover:text-indigo-400 transition-colors">
+              <div className="w-7 h-7 rounded-lg bg-slate-700 flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 transition-all">
+                <i className="fa-solid fa-phone text-[10px]"></i>
+              </div>
+              <p className="text-[10px] font-bold">+49 178 1868683</p>
+            </a>
+
+            <a href="mailto:vuxuantiep@gmail.com" className="flex items-center space-x-3 group hover:text-indigo-400 transition-colors">
+              <div className="w-7 h-7 rounded-lg bg-slate-700 flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 transition-all">
+                <i className="fa-solid fa-envelope text-[10px]"></i>
+              </div>
+              <p className="text-[10px] font-bold truncate">vuxuantiep@gmail.com</p>
+            </a>
+
+            <a href="https://itiep.de" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3 group hover:text-indigo-400 transition-colors">
+              <div className="w-7 h-7 rounded-lg bg-slate-700 flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 transition-all">
+                <i className="fa-solid fa-globe text-[10px]"></i>
+              </div>
+              <p className="text-[10px] font-bold">itiep.de</p>
+            </a>
+          </div>
         </div>
+      </div>
+
+      <div className="p-4 pt-0">
+        <button className="w-full bg-slate-800 hover:bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl transition-all shadow-sm active:scale-95">
+          Pro Plan Upgrade
+        </button>
       </div>
     </aside>
   );

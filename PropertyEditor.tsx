@@ -29,8 +29,6 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
   const [unitTab, setUnitTab] = useState<'details' | 'docs' | 'communication' | 'utility'>('details');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiResult, setAiResult] = useState<string | null>(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(templates[0]?.id || '');
-  const [letterContext, setLetterContext] = useState('');
   
   const [showAddCostForm, setShowAddCostForm] = useState(false);
   const [newCost, setNewCost] = useState({ category: '', amount: '' });
@@ -184,41 +182,72 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
   const unitPrepaymentYear = editingUnit ? (editingUnit.utilityPrepayment * 12) : 0;
   const balance = currentUnitShare - unitPrepaymentYear;
 
-  const exportToExcelCSV = () => {
-    if (!aiResult) return alert("Zuerst Dokument generieren!");
+  // NEUER PROFESSIONELLER EXCEL EXPORT (HTML-Basiert für Layout-Erhalt)
+  const exportToExcel = () => {
+    if (!aiResult || !editingUnit) return alert("Zuerst Dokument generieren!");
     
-    const rows: string[][] = [];
-    rows.push(["BETRIEBSKOSTENABRECHNUNG - ANSCHREIBEN"]);
-    rows.push([""]);
-    const textLines = aiResult.split('\n');
-    textLines.forEach(line => {
-      rows.push([line.replace(/;/g, ',').trim()]);
-    });
+    // Säubern des KI-Textes von eventuellen Markdown-Tabellen für den Briefteil
+    const briefText = aiResult.split('|')[0].trim(); // Wir nehmen den Text vor der ersten Tabelle
     
-    rows.push([""]);
-    rows.push(["KOSTENAUFSTELLUNG TABELLE"]);
-    rows.push(["Kostenart", "Haus Gesamt (€)", "Verteilerschlüssel", "Anteil Einheit (€)"]);
-    
-    editableBreakdown.forEach(item => {
-      rows.push([
-        item.category.replace(/;/g, ','),
-        item.total.toFixed(2).replace('.', ','),
-        item.key.replace(/;/g, ','),
-        item.share.toFixed(2).replace('.', ',')
-      ]);
-    });
-    
-    rows.push([""]);
-    rows.push(["Zusammenfassung", "", "", ""]);
-    rows.push(["Gesamtanteil Einheit", "", "", currentUnitShare.toFixed(2).replace('.', ',')]);
-    rows.push(["Vorauszahlungen Jahr", "", "", unitPrepaymentYear.toFixed(2).replace('.', ',')]);
-    rows.push(["Saldo", "", "", balance.toFixed(2).replace('.', ',')]);
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <style>
+          .text-cell { font-family: Arial; font-size: 11pt; vertical-align: top; white-space: pre-wrap; }
+          .header-cell { font-family: Arial; font-size: 10pt; font-weight: bold; background-color: #f3f4f6; border: 0.5pt solid #cbd5e1; }
+          .data-cell { font-family: Arial; font-size: 10pt; border: 0.5pt solid #e2e8f0; }
+          .money { text-align: right; mso-number-format: "#,##0.00\\ [\\€-407]"; }
+          .title { font-size: 14pt; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr><td colspan="4" class="title">Betriebskostenabrechnung 2023</td></tr>
+          <tr><td colspan="4"></td></tr>
+          <tr>
+            <td colspan="4" class="text-cell">
+              ${briefText.replace(/\n/g, '<br>')}
+            </td>
+          </tr>
+          <tr><td colspan="4"></td></tr>
+          <tr><td colspan="4" style="font-weight:bold; border-bottom: 1pt solid black;">Kostenaufstellung</td></tr>
+          <tr>
+            <td class="header-cell">Kostenart</td>
+            <td class="header-cell">Haus Gesamt (€)</td>
+            <td class="header-cell">Verteilerschlüssel</td>
+            <td class="header-cell">Anteil Einheit (€)</td>
+          </tr>
+          ${editableBreakdown.map(item => `
+            <tr>
+              <td class="data-cell">${item.category}</td>
+              <td class="data-cell money">${item.total.toFixed(2).replace('.', ',')}</td>
+              <td class="data-cell">${item.key}</td>
+              <td class="data-cell money">${item.share.toFixed(2).replace('.', ',')}</td>
+            </tr>
+          `).join('')}
+          <tr>
+            <td colspan="3" class="header-cell" style="text-align:right">Gesamtsumme Anteil:</td>
+            <td class="data-cell money" style="font-weight:bold">${currentUnitShare.toFixed(2).replace('.', ',')}</td>
+          </tr>
+          <tr>
+            <td colspan="3" class="header-cell" style="text-align:right">Vorauszahlungen:</td>
+            <td class="data-cell money">${unitPrepaymentYear.toFixed(2).replace('.', ',')}</td>
+          </tr>
+          <tr>
+            <td colspan="3" class="header-cell" style="text-align:right; background-color: #d1fae5">Saldo (Nachzahlung/Guthaben):</td>
+            <td class="data-cell money" style="font-weight:bold; background-color: #d1fae5">${balance.toFixed(2).replace('.', ',')}</td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
 
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + rows.map(r => r.join(';')).join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Abrechnung_2023_${editingUnit?.number || 'Einheit'}.csv`);
+    link.href = url;
+    link.download = `Betriebskostenabrechnung_2023_${editingUnit.number}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -236,18 +265,10 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
     text += `Mieter: ${assignedTenant.firstName} ${assignedTenant.lastName}\n\n`;
     text += `Sehr geehrte(r) Herr/Frau ${assignedTenant.lastName},\n\n`;
     text += `hiermit erhalten Sie die Abrechnung der Betriebskosten für das Kalenderjahr 2023.\n\n`;
-    text += `AUFSTELLUNG DER KOSTEN:\n`;
-    text += `------------------------------------------------------------------\n`;
-    editableBreakdown.forEach(item => {
-      text += `${item.category.padEnd(25)} | Haus: ${item.total.toFixed(2)}€ | Anteil: ${item.share.toFixed(2)}€\n`;
-    });
-    text += `------------------------------------------------------------------\n`;
-    text += `SUMME ANTEIL:           ${currentUnitShare.toFixed(2)} €\n`;
-    text += `VORAUSZAHLUNGEN:        ${unitPrepaymentYear.toFixed(2)} €\n`;
-    text += `SALDO:                  ${balance.toFixed(2)} €\n\n`;
+    text += `Untenstehend finden Sie die detaillierte Aufstellung Ihrer Anteile im Verhältnis zur Gesamtwohnfläche des Hauses.\n\n`;
     text += `${balance > 0 
-      ? `Bitte überweisen Sie die Nachzahlung von ${balance.toFixed(2)} € innerhalb von 30 Tagen.` 
-      : `Das Guthaben von ${Math.abs(balance).toFixed(2)} € wird mit der kommenden Miete verrechnet.`}\n\n`;
+      ? `Bitte überweisen Sie die fällige Nachzahlung in Höhe von ${balance.toFixed(2)} € innerhalb der nächsten 30 Tage auf das bekannte Konto.` 
+      : `Das Guthaben in Höhe von ${Math.abs(balance).toFixed(2)} € wird mit den kommenden Mietzahlungen verrechnet bzw. zeitnah an Sie erstattet.`}\n\n`;
     text += `Mit freundlichen Grüßen,\nIhr Vermieter`;
     
     setAiResult(text);
@@ -383,42 +404,6 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
                             )}
                          </tbody>
                       </table>
-                   </div>
-                </Section>
-
-                <Section title="Einheiten-Management">
-                   <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
-                      <table className="w-full text-left text-sm">
-                         <thead className="bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                            <tr>
-                               <th className="px-6 py-4">Bezeichnung</th>
-                               <th className="px-6 py-4">Größe (m²)</th>
-                               <th className="px-6 py-4">Kaltmiete (€)</th>
-                               <th className="px-6 py-4 text-right">Aktion</th>
-                            </tr>
-                         </thead>
-                         <tbody className="divide-y">
-                            {editedProperty.units.map(unit => (
-                               <tr key={unit.id} className="hover:bg-slate-50/50">
-                                  <td className="px-6 py-3">
-                                     <input className="bg-transparent font-bold text-slate-700 outline-none" value={unit.number} onChange={e => updateUnit(unit.id, 'number', e.target.value)} />
-                                  </td>
-                                  <td className="px-6 py-3 font-medium text-slate-500">
-                                     <input type="number" className="bg-transparent w-16 outline-none" value={unit.size} onChange={e => updateUnit(unit.id, 'size', parseFloat(e.target.value))} />
-                                  </td>
-                                  <td className="px-6 py-3 font-medium text-slate-500">
-                                     <input type="number" className="bg-transparent w-24 outline-none" value={unit.baseRent} onChange={e => updateUnit(unit.id, 'baseRent', parseFloat(e.target.value))} />
-                                  </td>
-                                  <td className="px-6 py-3 text-right">
-                                     <button onClick={() => handleDeleteUnit(unit.id)} className="text-red-300 hover:text-red-500 transition"><i className="fa-solid fa-trash-can"></i></button>
-                                  </td>
-                               </tr>
-                            ))}
-                         </tbody>
-                      </table>
-                      <button onClick={handleAddUnit} className="w-full py-4 bg-slate-50 text-indigo-600 font-black text-xs uppercase hover:bg-indigo-50 transition border-t">
-                         <i className="fa-solid fa-plus mr-2"></i> Neue Einheit hinzufügen
-                      </button>
                    </div>
                 </Section>
              </div>
@@ -634,7 +619,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ property, tenants, owne
                        </div>
                        <div className="flex flex-wrap gap-4 border-t border-white/10 pt-8">
                           <button className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-indigo-700 flex items-center" onClick={() => window.print()}><i className="fa-solid fa-print mr-2"></i> Drucken</button>
-                          <button className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-emerald-700 flex items-center" onClick={exportToExcelCSV}><i className="fa-solid fa-file-excel mr-2"></i> Excel/CSV Export (Brief + Tabelle)</button>
+                          <button className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-emerald-700 flex items-center" onClick={exportToExcel}><i className="fa-solid fa-file-excel mr-2"></i> Profi-Excel Export (Text + Tabelle getrennt)</button>
                           <button className="bg-slate-800 text-slate-400 px-8 py-3 rounded-xl font-bold text-xs ml-auto" onClick={() => setAiResult(null)}>Schließen</button>
                        </div>
                     </div>

@@ -77,7 +77,12 @@ const App: React.FC = () => {
   const handleUpdateProperty = (updated: Property, updatedTransactions?: Transaction[]) => {
     setProperties(prev => prev.map(p => p.id === updated.id ? updated : p));
     if (updatedTransactions) {
-      setTransactions(updatedTransactions);
+      // Ersetze alle Transaktionen für dieses Objekt durch die aktualisierten lokalen Versionen
+      setTransactions(prev => {
+        const otherTransactions = prev.filter(t => t.propertyId !== updated.id);
+        const objectTransactions = updatedTransactions.filter(t => t.propertyId === updated.id);
+        return [...otherTransactions, ...objectTransactions];
+      });
     }
     setEditingPropertyId(null);
   };

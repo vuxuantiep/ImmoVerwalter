@@ -29,7 +29,7 @@ export interface Template {
   id: string;
   name: string;
   subject: string;
-  content: string; // Basis-Text oder Instruktion für die KI
+  content: string; 
 }
 
 export interface Reminder {
@@ -86,13 +86,15 @@ export interface Unit {
   number: string;
   type: UnitType;
   size: number;
+  rooms?: number; // Neu
+  floor?: string; // Neu
   baseRent: number;
   utilityPrepayment: number;
   tenantId?: string;
   imageUrl?: string;
   documents?: PropertyDocument[];
   meterReadings?: MeterReading[];
-  isVatSubject?: boolean; // Speziell für Gewerbe
+  isVatSubject?: boolean; 
 }
 
 export interface Loan {
@@ -153,7 +155,7 @@ export interface Transaction {
   amount: number;
   date: string;
   description: string;
-  isUtilityRelevant?: boolean; // Ob die Ausgabe auf Mieter umlegbar ist
+  isUtilityRelevant?: boolean; 
 }
 
 export interface Handyman {

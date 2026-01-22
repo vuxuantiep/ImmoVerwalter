@@ -17,18 +17,15 @@
             font-family: 'Inter', sans-serif; 
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: contain;
-        }
-        /* Mobile-Optimierungen */
-        @media (max-width: 768px) {
-            .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+            background-color: #f8fafc;
         }
     </style>
 <script type="importmap">
 {
   "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
     "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
     "recharts": "https://esm.sh/recharts@^3.6.0",
     "vite": "https://esm.sh/vite@^7.3.1",
@@ -38,15 +35,9 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-slate-50 text-slate-900 select-none md:select-auto">
+<body>
     <div id="root"></div>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
-            });
-        }
-    </script>
-<script type="module" src="/index.tsx"></script>
+    <!-- WICHTIG: Dies lädt die App -->
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

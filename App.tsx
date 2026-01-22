@@ -1,14 +1,14 @@
 
 import React, { useState } from 'react';
-import { View, Property, Tenant, Transaction, Handyman, Owner, Stakeholder, HouseType, Reminder, ReminderCategory } from './types.ts';
-import Sidebar from './Sidebar.tsx';
-import Dashboard from './Dashboard.tsx';
-import PropertiesList from './PropertiesList.tsx';
-import TenantManager from './TenantManager.tsx';
-import FinanceTracker from './FinanceTracker.tsx';
-import ContactManager from './ContactManager.tsx';
-import AITools from './AITools.tsx';
-import InvestorDashboard from './InvestorDashboard.tsx';
+import { View, Property, Tenant, Transaction, Handyman, Owner, Stakeholder, HouseType, Reminder, ReminderCategory } from './types';
+import Sidebar from './Sidebar';
+import Dashboard from './Dashboard';
+import PropertiesList from './PropertiesList';
+import TenantManager from './TenantManager';
+import FinanceTracker from './FinanceTracker';
+import ContactManager from './ContactManager';
+import AITools from './AITools';
+import InvestorDashboard from './InvestorDashboard';
 
 const initialProperties: Property[] = [
   {

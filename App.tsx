@@ -11,11 +11,12 @@ import AITools from './AITools.tsx';
 import InvestorDashboard from './InvestorDashboard.tsx';
 import PropertyEditor from './PropertyEditor.tsx';
 
-const initialTemplates: Template[] = [
-  { id: 'v1', name: 'Mieterhöhung', subject: 'Ankündigung einer Mietanpassung', content: 'Vorlage für eine Mieterhöhung gemäß Mietspiegel oder Modernisierung.' },
-  { id: 'v2', name: 'Mahnung', subject: 'Zahlungserinnerung Mietrückstand', content: 'Höfliche aber bestimmte Erinnerung an ausstehende Mietzahlungen.' },
-  { id: 'v3', name: 'Übergabeprotokoll', subject: 'Bestätigung Wohnungsübergabe', content: 'Zusammenfassung des Zustands bei Ein- oder Auszug.' },
-  { id: 'v4', name: 'Individuell', subject: 'Mitteilung an den Mieter', content: 'Ein allgemeiner Brief für verschiedene Anlässe.' }
+const initialOwners: Owner[] = [
+  { id: 'o1', name: 'Dr. Klaus Vermieter', company: 'Klaus Immo GmbH', email: 'klaus@immo-tiep.de', phone: '030-555123', address: 'Schloßstr. 1', zip: '12163', city: 'Berlin', iban: 'DE12 3456 7890 1234 5678 90', bankName: 'Berliner Sparkasse', taxId: '13/123/45678' }
+];
+
+const initialTenants: Tenant[] = [
+  { id: 't1', firstName: 'Max', lastName: 'Mustermann', email: 'max@example.com', phone: '0170-1234567', startDate: '2022-01-01' }
 ];
 
 const initialProperties: Property[] = [
@@ -40,14 +41,6 @@ const initialProperties: Property[] = [
   }
 ];
 
-const initialOwners: Owner[] = [
-  { id: 'o1', name: 'Dr. Klaus Vermieter', company: 'Klaus Immo GmbH', email: 'klaus@immo-tiep.de', phone: '030-555123', address: 'Schloßstr. 1', zip: '12163', city: 'Berlin', iban: 'DE12 3456 7890 1234 5678 90', bankName: 'Berliner Sparkasse', taxId: '13/123/45678' }
-];
-
-const initialTenants: Tenant[] = [
-  { id: 't1', firstName: 'Max', lastName: 'Mustermann', email: 'max@example.com', phone: '0170-1234567', startDate: '2022-01-01' }
-];
-
 const initialTransactions: Transaction[] = [
   { id: 'tr1', propertyId: 'p1', type: TransactionType.EXPENSE, category: 'Versicherung', amount: 450, date: '2023-01-10', description: 'Gebäudeversicherung Allianz', isUtilityRelevant: true },
   { id: 'tr2', propertyId: 'p1', type: TransactionType.EXPENSE, category: 'Wasser/Abwasser', amount: 820, date: '2023-03-15', description: 'Berliner Wasserbetriebe', isUtilityRelevant: true },
@@ -60,11 +53,8 @@ const App: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>(initialProperties);
   const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
   const [owners, setOwners] = useState<Owner[]>(initialOwners);
-  const [templates] = useState<Template[]>(initialTemplates);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [handymen, setHandymen] = useState<any[]>([]);
-  const [stakeholders, setStakeholders] = useState<any[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
   const [showImpressum, setShowImpressum] = useState(false);
@@ -80,33 +70,47 @@ const App: React.FC = () => {
     if (updatedTransactions) {
       setTransactions(prev => {
         const otherTransactions = prev.filter(t => t.propertyId !== updated.id);
-        const objectTransactions = updatedTransactions.filter(t => t.propertyId === updated.id);
-        return [...otherTransactions, ...objectTransactions];
+        return [...otherTransactions, ...updatedTransactions.filter(t => t.propertyId === updated.id)];
       });
     }
     setEditingPropertyId(null);
   };
 
-  const addTransaction = (t: Transaction) => setTransactions(prev => [...prev, t]);
   const currentEditingProperty = properties.find(p => p.id === editingPropertyId);
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static z-50 transition-transform duration-300 h-full`}>
-        <Sidebar currentView={currentView} setView={setView} />
+    <div className="flex min-h-screen bg-slate-50 overflow-hidden">
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      <div className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0 z-50 transition-transform duration-300 ease-in-out h-full`}>
+        <Sidebar currentView={currentView} setView={setView} onClose={() => setIsSidebarOpen(false)} />
       </div>
 
-      <main className="flex-1 flex flex-col p-4 md:p-8 pb-32 lg:pb-8 h-screen overflow-y-auto">
-        <header className="mb-8 flex justify-between items-center shrink-0">
-          <div className="flex items-center space-x-4">
-            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-600">
-              <i className="fa-solid fa-bars-staggered"></i>
+      <main className="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+        <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex justify-between items-center z-30 shrink-0">
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => setIsSidebarOpen(true)} 
+              className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+            >
+              <i className="fa-solid fa-bars-staggered text-xl"></i>
             </button>
-            <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">ImmoManager-Tiep</h1>
+            <h1 className="text-lg font-black text-slate-800 tracking-tight lg:text-xl">ImmoTiep <span className="text-indigo-600">Pro</span></h1>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+               <i className="fa-solid fa-user text-xs"></i>
+            </div>
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto flex-1 w-full">
+        <div className="flex-1 p-4 md:p-8 w-full max-w-7xl mx-auto">
           {currentView === 'dashboard' && (
             <Dashboard 
               properties={properties} tenants={tenants} transactions={transactions} 
@@ -120,62 +124,64 @@ const App: React.FC = () => {
           {currentView === 'tenants' && (
             <TenantManager tenants={tenants} setTenants={setTenants} properties={properties} transactions={transactions} />
           )}
-          {currentView === 'finances' && <FinanceTracker transactions={transactions} addTransaction={addTransaction} properties={properties} />}
-          {currentView === 'contacts' && <ContactManager handymen={handymen} setHandymen={setHandymen} owners={owners} setOwners={setOwners} stakeholders={stakeholders} setStakeholders={setStakeholders} tenants={tenants} setTenants={setTenants} />}
-          {currentView === 'tools' && <AITools properties={properties} setProperties={setProperties} tenants={tenants} transactions={transactions} initialPropertyId={viewParams?.propertyId} initialTab={viewParams?.tab} />}
-          {currentView === 'investor' && <InvestorDashboard properties={properties} transactions={transactions} setProperties={setProperties} />}
-        </div>
+          {currentView === 'finances' && (
+            <FinanceTracker transactions={transactions} addTransaction={(t) => setTransactions(prev => [...prev, t])} properties={properties} />
+          )}
+          {currentView === 'contacts' && (
+            <ContactManager handymen={[]} setHandymen={() => {}} owners={owners} setOwners={setOwners} stakeholders={[]} setStakeholders={() => {}} tenants={tenants} setTenants={setTenants} />
+          )}
+          {currentView === 'tools' && (
+            <AITools properties={properties} setProperties={setProperties} tenants={tenants} transactions={transactions} initialPropertyId={viewParams?.propertyId} initialTab={viewParams?.tab} />
+          )}
+          {currentView === 'investor' && (
+            <InvestorDashboard properties={properties} transactions={transactions} setProperties={setProperties} />
+          )}
 
-        {/* Global Footer */}
-        <footer className="mt-12 pt-8 border-t border-slate-200 text-slate-400 shrink-0">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
-            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-              <span>© {new Date().getFullYear()} Vu Xuan Tiep</span>
-              <span className="hidden md:inline text-slate-200">|</span>
-              <span>Alle Rechte vorbehalten</span>
+          {/* Optimized Footer */}
+          <footer className="mt-16 pt-8 pb-8 border-t border-slate-200 text-slate-400">
+            <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:justify-between md:items-center text-[10px] font-bold uppercase tracking-widest text-center md:text-left">
+              <div>
+                <p>© {new Date().getFullYear()} Vu Xuan Tiep</p>
+                <p className="mt-1 text-[8px] opacity-60">Immobilien-Software-Lösungen</p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-4 md:gap-8">
+                <button onClick={() => setShowImpressum(true)} className="hover:text-indigo-600 transition">Impressum</button>
+                <a href="https://itiep.de" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition">Website</a>
+                <a href="mailto:vuxuantiep@gmail.com" className="hover:text-indigo-600 transition">Support</a>
+              </div>
             </div>
-            <div className="flex items-center space-x-6">
-              <button onClick={() => setShowImpressum(true)} className="hover:text-indigo-600 transition">Impressum</button>
-              <a href="https://itiep.de" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition">itiep.de</a>
-              <a href="mailto:vuxuantiep@gmail.com" className="hover:text-indigo-600 transition">Kontakt</a>
-            </div>
-          </div>
-        </footer>
+          </footer>
+        </div>
       </main>
 
-      {/* Impressum Modal */}
+      {/* Impressum Modal - Mobile Optimized */}
       {showImpressum && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-             <div className="bg-slate-900 p-6 flex justify-between items-center text-white">
-                <h3 className="text-xl font-black uppercase tracking-tight">Impressum</h3>
-                <button onClick={() => setShowImpressum(false)} className="p-2 hover:bg-white/10 rounded-full transition">
-                   <i className="fa-solid fa-xmark text-xl"></i>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+             <div className="bg-slate-900 p-5 flex justify-between items-center text-white">
+                <h3 className="text-lg font-black uppercase">Impressum</h3>
+                <button onClick={() => setShowImpressum(false)} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-full">
+                   <i className="fa-solid fa-xmark"></i>
                 </button>
              </div>
-             <div className="p-8 space-y-6 text-slate-700">
-                <section>
-                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Angaben gemäß § 5 TMG</h4>
-                   <p className="font-bold text-lg">Vu Xuan Tiep</p>
-                   <p className="text-sm">Informatik-Dienstleistungen & Immobilien-Technologien</p>
-                </section>
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div>
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Kontakt</h4>
-                      <p className="text-sm font-medium">Telefon: +49 178 1868683</p>
-                      <p className="text-sm font-medium">E-Mail: vuxuantiep@gmail.com</p>
-                   </div>
-                   <div>
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Webseite</h4>
-                      <a href="https://itiep.de" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-indigo-600 hover:underline">https://itiep.de</a>
-                   </div>
-                </section>
-                <div className="pt-6 border-t border-slate-100">
-                   <p className="text-[9px] text-slate-400 leading-relaxed italic">
-                      Haftungsausschluss: Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
-                   </p>
+             <div className="p-6 md:p-8 space-y-6">
+                <div className="space-y-1">
+                   <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Herausgeber</p>
+                   <p className="font-black text-slate-900 text-lg">Vu Xuan Tiep</p>
+                   <p className="text-sm text-slate-500">Full-Stack Software Engineer</p>
                 </div>
-                <button onClick={() => setShowImpressum(false)} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-black transition">Schließen</button>
+                <div className="grid grid-cols-1 gap-4">
+                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Direkt-Kontakt</p>
+                      <a href="tel:+491781868683" className="block font-bold text-slate-800 hover:text-indigo-600 mb-1">+49 178 1868683</a>
+                      <a href="mailto:vuxuantiep@gmail.com" className="block font-bold text-slate-800 hover:text-indigo-600">vuxuantiep@gmail.com</a>
+                   </div>
+                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Web-Präsenz</p>
+                      <a href="https://itiep.de" target="_blank" rel="noopener noreferrer" className="font-bold text-indigo-600">https://itiep.de</a>
+                   </div>
+                </div>
+                <button onClick={() => setShowImpressum(false)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition active:scale-95 shadow-lg shadow-slate-200">Fenster schließen</button>
              </div>
           </div>
         </div>
@@ -186,7 +192,7 @@ const App: React.FC = () => {
           property={currentEditingProperty}
           tenants={tenants}
           owners={owners}
-          templates={templates}
+          templates={[]}
           transactions={transactions}
           onSave={handleUpdateProperty}
           onCancel={() => setEditingPropertyId(null)}

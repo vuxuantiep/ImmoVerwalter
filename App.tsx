@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Property, Tenant, Transaction, HouseType, Reminder, ReminderCategory } from './types.ts';
+import { View, Property, Tenant, Transaction, HouseType, Reminder, ReminderCategory, Owner, Template, UnitType, TransactionType } from './types.ts';
 import Sidebar from './Sidebar.tsx';
 import Dashboard from './Dashboard.tsx';
 import PropertiesList from './PropertiesList.tsx';
@@ -9,6 +9,14 @@ import FinanceTracker from './FinanceTracker.tsx';
 import ContactManager from './ContactManager.tsx';
 import AITools from './AITools.tsx';
 import InvestorDashboard from './InvestorDashboard.tsx';
+import PropertyEditor from './PropertyEditor.tsx';
+
+const initialTemplates: Template[] = [
+  { id: 'v1', name: 'Mieterhöhung', subject: 'Ankündigung einer Mietanpassung', content: 'Vorlage für eine Mieterhöhung gemäß Mietspiegel oder Modernisierung.' },
+  { id: 'v2', name: 'Mahnung', subject: 'Zahlungserinnerung Mietrückstand', content: 'Höfliche aber bestimmte Erinnerung an ausstehende Mietzahlungen.' },
+  { id: 'v3', name: 'Übergabeprotokoll', subject: 'Bestätigung Wohnungsübergabe', content: 'Zusammenfassung des Zustands bei Ein- oder Auszug.' },
+  { id: 'v4', name: 'Individuell', subject: 'Mitteilung an den Mieter', content: 'Ein allgemeiner Brief für verschiedene Anlässe.' }
+];
 
 const initialProperties: Property[] = [
   {
@@ -16,30 +24,34 @@ const initialProperties: Property[] = [
     name: 'Sonnenresidenz',
     type: HouseType.APARTMENT_BLOCK,
     address: 'Sonnenallee 15, 12047 Berlin',
+    ownerId: 'o1',
     purchasePrice: 245000,
     purchaseDate: '2021-05-15',
+    yearBuilt: 1994,
+    heatingType: 'Gas-Zentral',
+    energyClass: 'C',
     units: [
-      { id: 'u1', number: 'EG links', size: 65, baseRent: 850, utilityPrepayment: 150, tenantId: 't1' },
-      { id: 'u2', number: '1. OG rechts', size: 45, baseRent: 600, utilityPrepayment: 110 }
+      { id: 'u1', number: 'EG links', type: UnitType.RESIDENTIAL, size: 65, baseRent: 850, utilityPrepayment: 150, tenantId: 't1' },
+      { id: 'u2', number: '1. OG rechts (Büro)', type: UnitType.COMMERCIAL, size: 45, baseRent: 600, utilityPrepayment: 110, isVatSubject: true }
     ],
     loans: [
-      {
-        id: 'l1',
-        bankName: 'DKB Bank',
-        totalAmount: 200000,
-        currentBalance: 185000,
-        interestRate: 1.25,
-        repaymentRate: 2.5,
-        fixedUntil: '2031-05-15',
-        monthlyInstallment: 625
-      }
-    ],
-    meterReadings: []
+      { id: 'l1', bankName: 'DKB Bank', totalAmount: 200000, currentBalance: 185000, interestRate: 1.25, repaymentRate: 2.5, fixedUntil: '2031-05-15', monthlyInstallment: 625 }
+    ]
   }
+];
+
+const initialOwners: Owner[] = [
+  { id: 'o1', name: 'Dr. Klaus Vermieter', company: 'Klaus Immo GmbH', email: 'klaus@immo-tiep.de', phone: '030-555123', address: 'Schloßstr. 1', zip: '12163', city: 'Berlin', iban: 'DE12 3456 7890 1234 5678 90', bankName: 'Berliner Sparkasse', taxId: '13/123/45678' }
 ];
 
 const initialTenants: Tenant[] = [
   { id: 't1', firstName: 'Max', lastName: 'Mustermann', email: 'max@example.com', phone: '0170-1234567', startDate: '2022-01-01' }
+];
+
+const initialTransactions: Transaction[] = [
+  { id: 'tr1', propertyId: 'p1', type: TransactionType.EXPENSE, category: 'Versicherung', amount: 450, date: '2023-01-10', description: 'Gebäudeversicherung Allianz', isUtilityRelevant: true },
+  { id: 'tr2', propertyId: 'p1', type: TransactionType.EXPENSE, category: 'Wasser/Abwasser', amount: 820, date: '2023-03-15', description: 'Berliner Wasserbetriebe', isUtilityRelevant: true },
+  { id: 'tr3', propertyId: 'p1', type: TransactionType.EXPENSE, category: 'Müllabfuhr', amount: 310, date: '2023-02-20', description: 'BSR Abfallentsorgung', isUtilityRelevant: true }
 ];
 
 const App: React.FC = () => {
@@ -47,9 +59,14 @@ const App: React.FC = () => {
   const [viewParams, setViewParams] = useState<any>(null);
   const [properties, setProperties] = useState<Property[]>(initialProperties);
   const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
+  const [owners, setOwners] = useState<Owner[]>(initialOwners);
+  const [templates] = useState<Template[]>(initialTemplates);
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [handymen, setHandymen] = useState<any[]>([]);
+  const [stakeholders, setStakeholders] = useState<any[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
 
   const setView = (v: View, params: any = null) => {
     setCurrentView(v);
@@ -57,7 +74,17 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
+  const handleUpdateProperty = (updated: Property, updatedTransactions?: Transaction[]) => {
+    setProperties(prev => prev.map(p => p.id === updated.id ? updated : p));
+    if (updatedTransactions) {
+      setTransactions(updatedTransactions);
+    }
+    setEditingPropertyId(null);
+  };
+
   const addTransaction = (t: Transaction) => setTransactions(prev => [...prev, t]);
+
+  const currentEditingProperty = properties.find(p => p.id === editingPropertyId);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -65,46 +92,47 @@ const App: React.FC = () => {
         <Sidebar currentView={currentView} setView={setView} />
       </div>
 
-      {isSidebarOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
-      )}
-      
       <main className="flex-1 p-4 md:p-8 pb-32 lg:pb-8">
-        <header className="mb-8 flex justify-between items-center bg-white/80 backdrop-blur shadow-sm p-4 rounded-2xl lg:bg-transparent lg:shadow-none">
+        <header className="mb-8 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-600">
               <i className="fa-solid fa-bars-staggered"></i>
             </button>
             <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">ImmoManager-Tiep</h1>
           </div>
-          <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold">VM</div>
         </header>
 
         <div className="max-w-7xl mx-auto">
-          {currentView === 'dashboard' && <Dashboard properties={properties} tenants={tenants} transactions={transactions} reminders={reminders} setReminders={setReminders} setView={setView} />}
-          {currentView === 'properties' && <PropertiesList properties={properties} setProperties={setProperties} setView={setView} />}
-          {currentView === 'tenants' && <TenantManager tenants={tenants} setTenants={setTenants} properties={properties} transactions={transactions} />}
+          {currentView === 'dashboard' && (
+            <Dashboard 
+              properties={properties} tenants={tenants} transactions={transactions} 
+              reminders={reminders} setReminders={setReminders} setView={setView} 
+              onEditProperty={setEditingPropertyId}
+            />
+          )}
+          {currentView === 'properties' && (
+            <PropertiesList properties={properties} setProperties={setProperties} setView={setView} onEditProperty={setEditingPropertyId} />
+          )}
           {currentView === 'finances' && <FinanceTracker transactions={transactions} addTransaction={addTransaction} properties={properties} />}
-          {currentView === 'investor' && <InvestorDashboard properties={properties} transactions={transactions} setProperties={setProperties} />}
-          {currentView === 'contacts' && <ContactManager handymen={[]} setHandymen={() => {}} owners={[]} setOwners={() => {}} stakeholders={[]} setStakeholders={() => {}} tenants={tenants} setTenants={setTenants} />}
+          {currentView === 'contacts' && <ContactManager handymen={handymen} setHandymen={setHandymen} owners={owners} setOwners={setOwners} stakeholders={stakeholders} setStakeholders={setStakeholders} tenants={tenants} setTenants={setTenants} />}
           {currentView === 'tools' && <AITools properties={properties} setProperties={setProperties} tenants={tenants} transactions={transactions} initialPropertyId={viewParams?.propertyId} initialTab={viewParams?.tab} />}
+          {currentView === 'investor' && <InvestorDashboard properties={properties} transactions={transactions} setProperties={setProperties} />}
         </div>
       </main>
 
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t px-6 py-3 flex justify-between items-center z-40 shadow-lg">
-        <NavIconButton active={currentView === 'dashboard'} onClick={() => setView('dashboard')} icon="fa-house" />
-        <NavIconButton active={currentView === 'properties'} onClick={() => setView('properties')} icon="fa-building" />
-        <NavIconButton active={currentView === 'finances'} onClick={() => setView('finances')} icon="fa-wallet" />
-        <NavIconButton active={currentView === 'tools'} onClick={() => setView('tools')} icon="fa-robot" />
-      </nav>
+      {currentEditingProperty && (
+        <PropertyEditor 
+          property={currentEditingProperty}
+          tenants={tenants}
+          owners={owners}
+          templates={templates}
+          transactions={transactions}
+          onSave={handleUpdateProperty}
+          onCancel={() => setEditingPropertyId(null)}
+        />
+      )}
     </div>
   );
 };
-
-const NavIconButton = ({ active, onClick, icon }: any) => (
-  <button onClick={onClick} className={`p-2 transition-all ${active ? 'text-indigo-600' : 'text-slate-400'}`}>
-    <i className={`fa-solid ${icon} text-xl`}></i>
-  </button>
-);
 
 export default App;

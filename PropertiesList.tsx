@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Property, HouseType, PropertyDocument, ContractAnalysis, View } from './types.ts';
+import { Property, HouseType, PropertyDocument, View } from './types.ts';
 import { analyzeContract } from './geminiService.ts';
 
 interface PropertiesListProps {
@@ -8,9 +8,10 @@ interface PropertiesListProps {
   setProperties: React.Dispatch<React.SetStateAction<Property[]>>;
   onGenerateExpose?: (propertyId: string) => void;
   setView?: (view: View, params?: any) => void;
+  onEditProperty: (id: string) => void;
 }
 
-const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperties, onGenerateExpose, setView }) => {
+const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperties, onGenerateExpose, setView, onEditProperty }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [selectedPropId, setSelectedPropId] = useState<string | null>(null);
   const [newProp, setNewProp] = useState({ name: '', address: '', type: HouseType.APARTMENT_BLOCK });
@@ -148,11 +149,26 @@ const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperti
         {properties.map(p => (
           <div key={p.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition">
             <div className="flex flex-col md:flex-row">
-              <div className="md:w-1/3 h-48 md:h-auto bg-slate-200 relative">
-                <img src={`https://picsum.photos/seed/${p.id}/600/400`} alt={p.name} className="w-full h-full object-cover opacity-90" />
+              <div 
+                className="md:w-1/3 h-48 md:h-auto bg-slate-200 relative cursor-pointer group overflow-hidden"
+                onClick={() => onEditProperty(p.id)}
+              >
+                <img 
+                  src={`https://picsum.photos/seed/${p.id}/600/400`} 
+                  alt={p.name} 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <i className="fa-solid fa-pen-to-square text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                </div>
                 <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-indigo-600 uppercase">
                   {p.type}
                 </div>
+                {p.energyClass && (
+                  <div className="absolute top-12 left-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                    Klasse {p.energyClass}
+                  </div>
+                )}
               </div>
               <div className="p-6 flex-1">
                 <div className="flex justify-between items-start">
@@ -163,34 +179,29 @@ const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperti
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <button 
+                      onClick={() => onEditProperty(p.id)}
+                      className="px-4 py-2 rounded-xl text-sm font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition flex items-center border border-indigo-100"
+                    >
+                      <i className="fa-solid fa-pen-to-square mr-2"></i> Stammdaten pflegen
+                    </button>
                     <button onClick={() => setView && setView('tools', { tab: 'market', propertyId: p.id })} className="px-4 py-2 rounded-xl text-sm font-bold bg-violet-50 text-violet-700 hover:bg-violet-100 transition flex items-center border border-violet-100">
                       <i className="fa-solid fa-earth-europe mr-2"></i> Markt
-                    </button>
-                    <button onClick={() => setView && setView('tools', { tab: 'meters', propertyId: p.id })} className="px-4 py-2 rounded-xl text-sm font-bold bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition flex items-center border border-cyan-100">
-                      <i className="fa-solid fa-gauge-high mr-2"></i> Scan
                     </button>
                     <button onClick={() => onGenerateExpose && onGenerateExpose(p.id)} className="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition flex items-center border border-emerald-100">
                       <i className="fa-solid fa-file-pdf mr-2"></i> Exposé
                     </button>
-                    <button onClick={() => setSelectedPropId(selectedPropId === p.id ? null : p.id)} className={`px-4 py-2 rounded-xl text-sm font-bold transition flex items-center ${selectedPropId === p.id ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>
+                    <button onClick={() => setSelectedPropId(selectedPropId === p.id ? null : p.id)} className={`px-4 py-2 rounded-xl text-sm font-bold transition flex items-center ${selectedPropId === p.id ? 'bg-slate-200 text-slate-700' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>
                       <i className="fa-solid fa-file-shield mr-2"></i> Dokumente
                     </button>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4 border-t border-slate-100 pt-4 mb-4">
-                  <div className="text-center p-2 bg-slate-50 rounded-xl">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Einheiten</p>
-                    <p className="text-lg font-bold text-slate-800">{p.units.length}</p>
-                  </div>
-                  <div className="text-center p-2 bg-slate-50 rounded-xl">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Gesamtfläche</p>
-                    <p className="text-lg font-bold text-slate-800">{p.units.reduce((s, u) => s + u.size, 0)} m²</p>
-                  </div>
-                  <div className="text-center p-2 bg-slate-50 rounded-xl">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Zählerstände</p>
-                    <p className="text-lg font-bold text-slate-800">{p.meterReadings?.length || 0}</p>
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-slate-100 pt-4 mb-4">
+                  <PropertyQuickStat label="Einheiten" value={p.units.length} />
+                  <PropertyQuickStat label="Gesamtfläche" value={`${p.units.reduce((s, u) => s + u.size, 0)} m²`} />
+                  <PropertyQuickStat label="Baujahr" value={p.yearBuilt || '-'} />
+                  <PropertyQuickStat label="Heizung" value={p.heatingType || '-'} />
                 </div>
 
                 {selectedPropId === p.id && (
@@ -206,63 +217,31 @@ const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperti
                     <div className="space-y-3">
                       {p.documents && p.documents.length > 0 ? (
                         p.documents.map(doc => (
-                          <div key={doc.id} className="flex flex-col space-y-2">
-                            <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm hover:border-indigo-200 transition">
-                              <div className="flex items-center space-x-3 min-w-0 flex-1">
-                                <div className="bg-indigo-50 p-2 rounded-lg text-indigo-500 shrink-0">
-                                  {doc.mimeType.includes('pdf') ? <i className="fa-solid fa-file-pdf text-lg"></i> : <i className="fa-solid fa-file-image text-lg"></i>}
-                                </div>
-                                <div className="truncate">
-                                  <p className="text-sm font-bold text-slate-800 truncate" title={doc.name}>{doc.name}</p>
-                                  <p className="text-[10px] text-slate-400 font-medium">{doc.uploadDate} • {doc.fileSize}</p>
-                                </div>
+                          <div key={doc.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm hover:border-indigo-200 transition">
+                            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                              <div className="bg-indigo-50 p-2 rounded-lg text-indigo-500 shrink-0">
+                                {doc.mimeType.includes('pdf') ? <i className="fa-solid fa-file-pdf text-lg"></i> : <i className="fa-solid fa-file-image text-lg"></i>}
                               </div>
-                              <div className="flex items-center space-x-1 shrink-0">
-                                <button onClick={() => handleAnalyzeDocument(p.id, doc)} className={`p-2 text-xs font-bold rounded-lg transition ${doc.analysis ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`} disabled={analyzingDocId === doc.id}>
-                                  {analyzingDocId === doc.id ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-wand-sparkles"></i>}
-                                </button>
-                                <button onClick={() => downloadDocument(doc)} className="p-2 text-slate-400 hover:text-indigo-600 transition">
-                                  <i className="fa-solid fa-download"></i>
-                                </button>
-                                <button onClick={() => deleteDocument(p.id, doc.id)} className="p-2 text-slate-400 hover:text-red-500 transition">
-                                  <i className="fa-solid fa-trash-can"></i>
-                                </button>
+                              <div className="truncate">
+                                <p className="text-sm font-bold text-slate-800 truncate">{doc.name}</p>
+                                <p className="text-[10px] text-slate-400 font-medium">{doc.uploadDate} • {doc.fileSize}</p>
                               </div>
                             </div>
-                            
-                            {showAnalysisId === doc.id && doc.analysis && (
-                              <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 animate-in slide-in-from-top-1">
-                                <div className="flex justify-between items-start mb-3">
-                                  <h5 className="text-xs font-black text-indigo-900 uppercase tracking-wider">KI-Vertragsanalyse</h5>
-                                  <button onClick={() => setShowAnalysisId(null)} className="text-indigo-400 hover:text-indigo-600">
-                                    <i className="fa-solid fa-xmark"></i>
-                                  </button>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-3 mb-4">
-                                  <AnalysisItem label="Mietbeginn" value={doc.analysis.leaseStart} />
-                                  <AnalysisItem label="Kaltmiete" value={doc.analysis.rentAmount} />
-                                  <AnalysisItem label="Kündigungsfrist" value={doc.analysis.noticePeriod} />
-                                  <AnalysisItem label="Befristung bis" value={doc.analysis.leaseEnd || 'Unbefristet'} />
-                                </div>
-
-                                <div className="space-y-3">
-                                  <AnalysisList label="Auffällige Klauseln" items={doc.analysis.unusualClauses} icon="fa-circle-exclamation" color="text-amber-600" />
-                                  <AnalysisList label="Risiken für Vermieter" items={doc.analysis.risks} icon="fa-triangle-exclamation" color="text-red-600" />
-                                </div>
-                                <div className="mt-4 pt-3 border-t border-indigo-100">
-                                  <p className="text-[10px] font-bold text-indigo-900 uppercase mb-1">Zusammenfassung</p>
-                                  <p className="text-xs text-slate-700 leading-relaxed italic">{doc.analysis.summary}</p>
-                                </div>
-                              </div>
-                            )}
+                            <div className="flex items-center space-x-1 shrink-0">
+                              <button onClick={() => handleAnalyzeDocument(p.id, doc)} className={`p-2 text-xs font-bold rounded-lg transition ${doc.analysis ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`} disabled={analyzingDocId === doc.id}>
+                                {analyzingDocId === doc.id ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-wand-sparkles"></i>}
+                              </button>
+                              <button onClick={() => downloadDocument(doc)} className="p-2 text-slate-400 hover:text-indigo-600 transition">
+                                <i className="fa-solid fa-download"></i>
+                              </button>
+                              <button onClick={() => deleteDocument(p.id, doc.id)} className="p-2 text-slate-400 hover:text-red-500 transition">
+                                <i className="fa-solid fa-trash-can"></i>
+                              </button>
+                            </div>
                           </div>
                         ))
                       ) : (
-                        <div className="text-center py-6 text-slate-400">
-                          <i className="fa-solid fa-folder-open text-2xl mb-2 opacity-30"></i>
-                          <p className="text-xs">Noch keine Dokumente hinterlegt.</p>
-                        </div>
+                        <div className="text-center py-6 text-slate-400 italic text-xs">Keine Dokumente.</div>
                       )}
                     </div>
                   </div>
@@ -276,28 +255,10 @@ const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperti
   );
 };
 
-const AnalysisItem: React.FC<{ label: string, value?: string }> = ({ label, value }) => (
-  <div className="bg-white p-2 rounded-lg border border-indigo-100">
-    <p className="text-[9px] font-bold text-slate-400 uppercase">{label}</p>
-    <p className="text-xs font-bold text-slate-800">{value || '-'}</p>
-  </div>
-);
-
-const AnalysisList: React.FC<{ label: string, items: string[], icon: string, color: string }> = ({ label, items, icon, color }) => (
-  <div>
-    <p className="text-[10px] font-bold text-indigo-900 uppercase mb-1.5">{label}</p>
-    {items && items.length > 0 ? (
-      <ul className="space-y-1">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-start space-x-2 text-[11px] text-slate-700">
-            <i className={`fa-solid ${icon} ${color} mt-0.5 shrink-0`}></i>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <p className="text-[11px] text-slate-400 italic">Keine Einträge gefunden.</p>
-    )}
+const PropertyQuickStat = ({ label, value }: any) => (
+  <div className="text-center p-2 bg-slate-50 rounded-xl">
+    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{label}</p>
+    <p className="text-sm font-bold text-slate-800 truncate">{value}</p>
   </div>
 );
 

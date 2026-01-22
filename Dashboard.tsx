@@ -11,9 +11,10 @@ interface DashboardProps {
   reminders: Reminder[];
   setReminders: React.Dispatch<React.SetStateAction<Reminder[]>>;
   setView: (view: View, params?: any) => void;
+  onEditProperty: (id: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ properties, tenants, transactions, reminders, setReminders, setView }) => {
+const Dashboard: React.FC<DashboardProps> = ({ properties, tenants, transactions, reminders, setReminders, setView, onEditProperty }) => {
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [newReminder, setNewReminder] = useState<Partial<Reminder>>({
     category: ReminderCategory.METER,
@@ -79,6 +80,44 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, tenants, transactions
         <StatCard title="Cashflow" value={`${(income - expenses).toFixed(0)}€`} icon="fa-euro-sign" color="text-indigo-600" bgColor="bg-indigo-100" />
       </div>
 
+      {/* Immobilien-Schnellzugriff */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold text-slate-800">Meine Immobilien</h3>
+          <button onClick={() => setView('properties')} className="text-xs font-bold text-indigo-600 hover:underline">Alle ansehen</button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {properties.slice(0, 3).map(p => (
+            <div 
+              key={p.id} 
+              onClick={() => onEditProperty(p.id)}
+              className="group cursor-pointer bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 hover:shadow-lg transition-all"
+            >
+              <div className="h-32 overflow-hidden relative">
+                <img 
+                  src={`https://picsum.photos/seed/${p.id}/400/300`} 
+                  alt={p.name} 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <i className="fa-solid fa-pen text-white opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                </div>
+              </div>
+              <div className="p-4">
+                <p className="font-bold text-slate-800 truncate">{p.name}</p>
+                <p className="text-[10px] text-slate-500 truncate">{p.address}</p>
+              </div>
+            </div>
+          ))}
+          {properties.length === 0 && (
+            <button onClick={() => setView('properties')} className="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-300 hover:text-indigo-500 transition">
+               <i className="fa-solid fa-plus text-2xl mb-2"></i>
+               <span className="text-xs font-bold">Objekt hinzufügen</span>
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-around">
@@ -118,90 +157,6 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, tenants, transactions
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-slate-800">Fristen & Termine</h3>
-              <button 
-                onClick={() => setShowAddReminder(true)}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg transition"
-              >
-                <i className="fa-solid fa-plus mr-1"></i> Neu
-              </button>
-            </div>
-
-            {showAddReminder && (
-              <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-4 animate-in fade-in duration-300">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <input 
-                    className="border p-2 rounded-lg text-sm" 
-                    placeholder="Was ist zu tun?" 
-                    value={newReminder.title || ''}
-                    onChange={e => setNewReminder({...newReminder, title: e.target.value})}
-                  />
-                  <input 
-                    type="date"
-                    className="border p-2 rounded-lg text-sm"
-                    value={newReminder.date || ''}
-                    onChange={e => setNewReminder({...newReminder, date: e.target.value})}
-                  />
-                  <select 
-                    className="border p-2 rounded-lg text-sm"
-                    value={newReminder.category}
-                    onChange={e => setNewReminder({...newReminder, category: e.target.value as ReminderCategory})}
-                  >
-                    {Object.values(ReminderCategory).map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <select 
-                    className="border p-2 rounded-lg text-sm"
-                    value={newReminder.propertyId || ''}
-                    onChange={e => setNewReminder({...newReminder, propertyId: e.target.value})}
-                  >
-                    <option value="">Objekt wählen...</option>
-                    {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
-                </div>
-                <div className="flex space-x-2">
-                  <button onClick={handleAddReminder} className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold">Speichern</button>
-                  <button onClick={() => setShowAddReminder(false)} className="px-4 py-2 text-xs font-bold text-slate-500">Abbrechen</button>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {reminders.length > 0 ? (
-                reminders.slice().sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(r => (
-                  <div key={r.id} className={`flex items-center justify-between p-3 rounded-xl border transition ${r.isDone ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-100 hover:border-indigo-100 shadow-sm'}`}>
-                    <div className="flex items-center space-x-4">
-                      <button onClick={() => toggleReminder(r.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition ${r.isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent hover:border-indigo-400'}`}>
-                        <i className="fa-solid fa-check text-[10px]"></i>
-                      </button>
-                      <div>
-                        <h4 className={`text-sm font-bold ${r.isDone ? 'line-through text-slate-400' : 'text-slate-800'}`}>{r.title}</h4>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{r.date}</span>
-                          <span className="text-[10px] text-slate-300">•</span>
-                          <span className="text-[10px] font-bold text-indigo-500 uppercase">{r.category}</span>
-                        </div>
-                      </div>
-                    </div>
-                    {!r.isDone && (
-                      <button 
-                        onClick={() => handleCreateEmail(r)}
-                        disabled={isGeneratingMail === r.id}
-                        className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-                        title="KI E-Mail Entwurf"
-                      >
-                        {isGeneratingMail === r.id ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-envelope-open-text"></i>}
-                      </button>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="text-slate-400 text-sm text-center py-8 italic">Keine anstehenden Termine.</p>
-              )}
             </div>
           </div>
         </div>

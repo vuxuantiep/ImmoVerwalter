@@ -91,7 +91,7 @@ const App: React.FC = () => {
             </button>
             <div>
               <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">{viewLabels[currentView]}</h1>
-              <p className="hidden md:block text-slate-500 font-medium text-sm">Willkommen zurück, Vermieter.</p>
+              <p className="hidden md:block text-slate-500 font-medium text-sm">Willkommen bei ImmoManager Pro.</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -104,7 +104,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="max-w-7xl mx-auto">
           {currentView === 'dashboard' && (
             <Dashboard 
               properties={properties} 

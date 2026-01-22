@@ -75,7 +75,7 @@ const App: React.FC = () => {
             <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-600">
               <i className="fa-solid fa-bars-staggered"></i>
             </button>
-            <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">ImmoManager Pro</h1>
+            <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">ImmoManager-Tiep</h1>
           </div>
           <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold">VM</div>
         </header>

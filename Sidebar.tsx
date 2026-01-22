@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
           <div className="bg-indigo-500 p-2 rounded-lg">
             <i className="fa-solid fa-house-chimney text-white text-xl"></i>
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">ImmoManager</span>
+          <span className="text-xl font-bold text-white tracking-tight">ImmoManager-Tiep</span>
         </div>
       </div>
       

@@ -10,7 +10,6 @@ import ContactManager from './ContactManager.tsx';
 import AITools from './AITools.tsx';
 import InvestorDashboard from './InvestorDashboard.tsx';
 import PropertyEditor from './PropertyEditor.tsx';
-import AIFeedbackAssistant from './AIFeedbackAssistant.tsx';
 
 const initialOwners: Owner[] = [
   { id: 'o1', name: 'Muster Vermieter', email: 'info@vermieter.de', phone: '0123', address: 'Heimweg 1', zip: '10115', city: 'Berlin' }
@@ -79,6 +78,7 @@ const App: React.FC = () => {
   };
 
   const handleAuth = (isLogin: boolean) => {
+    // Simulierter Login/Registrierung
     setCurrentUser({
       id: 'u' + Date.now(),
       name: 'Max Mustermann',
@@ -94,6 +94,7 @@ const App: React.FC = () => {
     setShowPricing(false);
   };
 
+  // Find the property that is currently being edited to pass to the PropertyEditor
   const currentEditingProperty = properties.find(p => p.id === editingPropertyId);
 
   return (
@@ -206,9 +207,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <AIFeedbackAssistant />
-
-      {/* Auth Modal */}
+      {/* Auth Modal (Login / Register) */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[400] flex items-center justify-center p-4">
            <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
@@ -218,11 +217,23 @@ const App: React.FC = () => {
                     <i className="fa-solid fa-user-plus text-3xl"></i>
                  </div>
                  <h3 className="text-2xl font-black uppercase tracking-tight">Konto erstellen</h3>
+                 <p className="text-indigo-100 text-xs font-bold opacity-80 mt-2">Starten Sie jetzt mit ImmoTiep</p>
               </div>
               <div className="p-8 space-y-4">
-                 <button onClick={() => handleAuth(true)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase hover:bg-black transition flex items-center justify-center space-x-3">
+                 <div className="space-y-3">
+                    <input className="w-full border-slate-200 border p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-sm bg-slate-50" placeholder="Name" />
+                    <input className="w-full border-slate-200 border p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-sm bg-slate-50" placeholder="E-Mail Adresse" />
+                    <input className="w-full border-slate-200 border p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-sm bg-slate-50" type="password" placeholder="Passwort" />
+                 </div>
+                 <button onClick={() => handleAuth(false)} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition active:scale-95 shadow-xl shadow-indigo-100">Kostenlos Registrieren</button>
+                 <div className="flex items-center space-x-4 py-2">
+                    <div className="flex-1 h-[1px] bg-slate-100"></div>
+                    <span className="text-[10px] font-black text-slate-300 uppercase">Oder</span>
+                    <div className="flex-1 h-[1px] bg-slate-100"></div>
+                 </div>
+                 <button onClick={() => handleAuth(true)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition flex items-center justify-center space-x-3">
                     <i className="fa-solid fa-arrow-right-to-bracket"></i>
-                    <span>Einloggen / Registrieren</span>
+                    <span>Einloggen</span>
                  </button>
               </div>
            </div>
@@ -235,41 +246,87 @@ const App: React.FC = () => {
           <div className="bg-white w-full max-w-5xl h-[90vh] md:h-auto overflow-y-auto rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="bg-indigo-600 p-8 text-white text-center">
                <h3 className="text-3xl font-black mb-2 uppercase tracking-tighter">Wählen Sie Ihr Paket</h3>
+               <p className="text-indigo-100 font-bold opacity-80">Skalieren Sie Ihre Verwaltung professionell</p>
             </div>
             <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+               {/* Free Tier */}
                <div className={`p-8 rounded-[2rem] border ${currentUser?.tier === SubscriptionTier.FREE ? 'border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-50' : 'border-slate-100'} flex flex-col`}>
-                  <h4 className="text-xl font-black text-slate-800">Free</h4>
-                  <p className="text-3xl font-black mt-4 text-slate-900">0 €</p>
-                  <button disabled className="w-full mt-8 bg-slate-200 text-slate-500 py-3.5 rounded-2xl font-black text-[10px] uppercase">Aktuell</button>
+                  <div className="mb-6">
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Starter</p>
+                    <h4 className="text-xl font-black text-slate-800">Free Paket</h4>
+                    <p className="text-3xl font-black mt-4 text-slate-900">0 € <span className="text-xs text-slate-400 font-bold">/ Mo</span></p>
+                  </div>
+                  <ul className="flex-1 space-y-4 mb-8">
+                    <PricingFeature active text="Max. 1 Objekt" />
+                    <PricingFeature active text="Max. 1 Vermieter" />
+                    <PricingFeature active={false} text="Beliebige Einheiten" />
+                    <PricingFeature active={false} text="Eigenes Hosting" />
+                  </ul>
+                  <button disabled className="w-full bg-slate-200 text-slate-500 py-3.5 rounded-2xl font-black text-[10px] uppercase cursor-default">
+                    Aktuelles Paket
+                  </button>
                </div>
-               <div className="p-8 rounded-[2rem] border-2 border-indigo-100 flex flex-col bg-white shadow-xl transform md:scale-105">
-                  <h4 className="text-xl font-black text-slate-800">Standard</h4>
-                  <p className="text-3xl font-black mt-4 text-slate-900">10 €</p>
-                  <button onClick={() => upgradeTier(SubscriptionTier.STANDARD)} className="w-full mt-8 bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase">Jetzt Upgrade</button>
+
+               {/* Standard Tier */}
+               <div className={`p-8 rounded-[2rem] border-2 ${currentUser?.tier === SubscriptionTier.STANDARD ? 'border-indigo-600 bg-indigo-50/50' : 'border-indigo-100'} flex flex-col relative shadow-xl transform md:scale-105 bg-white`}>
+                  <div className="absolute top-0 right-8 -translate-y-1/2 bg-indigo-600 text-white px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">Meistgewählt</div>
+                  <div className="mb-6">
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Professionell</p>
+                    <h4 className="text-xl font-black text-slate-800">Standard Paket</h4>
+                    <p className="text-3xl font-black mt-4 text-slate-900">10 € <span className="text-xs text-slate-400 font-bold">/ Mo</span></p>
+                  </div>
+                  <ul className="flex-1 space-y-4 mb-8">
+                    <PricingFeature active text="Unbegrenzte Objekte" />
+                    <PricingFeature active text="Unbegrenzte Vermieter" />
+                    <PricingFeature active text="Alle KI-Tools inkl." />
+                    <PricingFeature active={false} text="Priority Support" />
+                  </ul>
+                  <button onClick={() => upgradeTier(SubscriptionTier.STANDARD)} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase hover:bg-black transition shadow-xl shadow-indigo-200 active:scale-95">
+                    Jetzt upgraden
+                  </button>
                </div>
-               <div className="p-8 rounded-[2rem] border border-slate-100 flex flex-col">
-                  <h4 className="text-xl font-black text-slate-800">Enterprise</h4>
-                  <p className="text-3xl font-black mt-4 text-slate-900">50 €</p>
-                  <button onClick={() => upgradeTier(SubscriptionTier.ENTERPRISE)} className="w-full mt-8 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase">Wählen</button>
+
+               {/* Enterprise Tier */}
+               <div className={`p-8 rounded-[2rem] border ${currentUser?.tier === SubscriptionTier.ENTERPRISE ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-100'} flex flex-col`}>
+                  <div className="mb-6">
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Full Service</p>
+                    <h4 className="text-xl font-black text-slate-800">Enterprise</h4>
+                    <p className="text-3xl font-black mt-4 text-slate-900">50 € <span className="text-xs text-slate-400 font-bold">/ Mo</span></p>
+                  </div>
+                  <ul className="flex-1 space-y-4 mb-8">
+                    <PricingFeature active text="Alles aus Standard" />
+                    <PricingFeature active text="EIGENES HOSTING" />
+                    <PricingFeature active text="Persönlicher Support" />
+                    <PricingFeature active text="White-Label-Option" />
+                  </ul>
+                  <button onClick={() => upgradeTier(SubscriptionTier.ENTERPRISE)} className="w-full bg-slate-900 text-white py-3.5 rounded-2xl font-black text-[10px] uppercase hover:bg-black transition shadow-xl active:scale-95">
+                    Enterprise wählen
+                  </button>
                </div>
+            </div>
+            <div className="p-6 bg-slate-50 text-center rounded-b-[2.5rem]">
+               <button onClick={() => setShowPricing(false)} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition">Später entscheiden</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Impressum Modal */}
       {showImpressum && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[500] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
              <div className="bg-slate-900 p-5 flex justify-between items-center text-white">
                 <h3 className="text-lg font-black uppercase">Impressum</h3>
                 <button onClick={() => setShowImpressum(false)} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-full"><i className="fa-solid fa-xmark"></i></button>
              </div>
              <div className="p-8 space-y-6 text-center">
-                <div><p className="font-black text-slate-900 text-xl">Vu Xuan Tiep</p></div>
-                <div className="bg-slate-50 p-6 rounded-3xl">
+                <div><p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Herausgeber</p><p className="font-black text-slate-900 text-xl">Vu Xuan Tiep</p></div>
+                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                   <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Support-Kontakt</p>
+                   <a href="tel:+491781868683" className="block font-black text-slate-800 text-lg hover:text-indigo-600">+49 178 1868683</a>
                    <a href="mailto:vuxuantiep@gmail.com" className="block font-black text-slate-800 text-lg hover:text-indigo-600">vuxuantiep@gmail.com</a>
                 </div>
-                <button onClick={() => setShowImpressum(false)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase">Schließen</button>
+                <button onClick={() => setShowImpressum(false)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition">Schließen</button>
              </div>
           </div>
         </div>
@@ -281,5 +338,14 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+const PricingFeature = ({ active, text }: { active: boolean, text: string }) => (
+  <li className={`flex items-center space-x-3 text-xs ${active ? 'text-slate-800' : 'text-slate-300'}`}>
+    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-200'}`}>
+      <i className={`fa-solid ${active ? 'fa-check text-[10px]' : 'fa-xmark text-[10px]'}`}></i>
+    </div>
+    <span className={active ? 'font-black uppercase text-[9px] tracking-tighter' : 'font-medium'}>{text}</span>
+  </li>
+);
 
 export default App;

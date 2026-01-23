@@ -9,14 +9,21 @@ interface PropertiesListProps {
   onGenerateExpose?: (propertyId: string) => void;
   setView?: (view: View, params?: any) => void;
   onEditProperty: (id: string) => void;
+  onCheckLimit: () => boolean;
 }
 
-const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperties, onGenerateExpose, setView, onEditProperty }) => {
+const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperties, onGenerateExpose, setView, onEditProperty, onCheckLimit }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [selectedPropId, setSelectedPropId] = useState<string | null>(null);
   const [newProp, setNewProp] = useState({ name: '', address: '', type: HouseType.APARTMENT_BLOCK });
   const [analyzingDocId, setAnalyzingDocId] = useState<string | null>(null);
   const [showAnalysisId, setShowAnalysisId] = useState<string | null>(null);
+
+  const handleShowAdd = () => {
+    if (onCheckLimit()) {
+      setShowAdd(true);
+    }
+  };
 
   const addProperty = () => {
     if (!newProp.name || !newProp.address) return;
@@ -107,7 +114,7 @@ const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperti
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-slate-800">Ihre Immobilien ({properties.length})</h2>
         <button 
-          onClick={() => setShowAdd(true)}
+          onClick={handleShowAdd}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center transition"
         >
           <i className="fa-solid fa-plus mr-2"></i> Neues Objekt
@@ -164,11 +171,6 @@ const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperti
                 <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-indigo-600 uppercase">
                   {p.type}
                 </div>
-                {p.energyClass && (
-                  <div className="absolute top-12 left-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                    Klasse {p.energyClass}
-                  </div>
-                )}
               </div>
               <div className="p-6 flex-1">
                 <div className="flex justify-between items-start">
@@ -183,69 +185,24 @@ const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperti
                       onClick={() => onEditProperty(p.id)}
                       className="px-4 py-2 rounded-xl text-sm font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition flex items-center border border-indigo-100"
                     >
-                      <i className="fa-solid fa-pen-to-square mr-2"></i> Stammdaten pflegen
+                      <i className="fa-solid fa-pen-to-square mr-2"></i> Stammdaten
                     </button>
                     <button onClick={() => setView && setView('tools', { tab: 'market', propertyId: p.id })} className="px-4 py-2 rounded-xl text-sm font-bold bg-violet-50 text-violet-700 hover:bg-violet-100 transition flex items-center border border-violet-100">
                       <i className="fa-solid fa-earth-europe mr-2"></i> Markt
-                    </button>
-                    <button onClick={() => onGenerateExpose && onGenerateExpose(p.id)} className="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition flex items-center border border-emerald-100">
-                      <i className="fa-solid fa-file-pdf mr-2"></i> Exposé
-                    </button>
-                    <button onClick={() => setSelectedPropId(selectedPropId === p.id ? null : p.id)} className={`px-4 py-2 rounded-xl text-sm font-bold transition flex items-center ${selectedPropId === p.id ? 'bg-slate-200 text-slate-700' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>
-                      <i className="fa-solid fa-file-shield mr-2"></i> Dokumente
                     </button>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-slate-100 pt-4 mb-4">
-                  <PropertyQuickStat label="Einheiten" value={p.units.length} />
-                  <PropertyQuickStat label="Gesamtfläche" value={`${p.units.reduce((s, u) => s + u.size, 0)} m²`} />
-                  <PropertyQuickStat label="Baujahr" value={p.yearBuilt || '-'} />
-                  <PropertyQuickStat label="Heizung" value={p.heatingType || '-'} />
-                </div>
-
-                {selectedPropId === p.id && (
-                  <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 animate-in slide-in-from-top-2 duration-300">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="font-bold text-slate-800 text-sm">Dokumentenarchiv</h4>
-                      <label className="cursor-pointer bg-white border border-indigo-200 text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-50 transition">
-                        <i className="fa-solid fa-upload mr-2"></i> Datei hochladen
-                        <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, p.id)} accept=".pdf,.doc,.docx,.jpg,.png" />
-                      </label>
-                    </div>
-
-                    <div className="space-y-3">
-                      {p.documents && p.documents.length > 0 ? (
-                        p.documents.map(doc => (
-                          <div key={doc.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm hover:border-indigo-200 transition">
-                            <div className="flex items-center space-x-3 min-w-0 flex-1">
-                              <div className="bg-indigo-50 p-2 rounded-lg text-indigo-500 shrink-0">
-                                {doc.mimeType.includes('pdf') ? <i className="fa-solid fa-file-pdf text-lg"></i> : <i className="fa-solid fa-file-image text-lg"></i>}
-                              </div>
-                              <div className="truncate">
-                                <p className="text-sm font-bold text-slate-800 truncate">{doc.name}</p>
-                                <p className="text-[10px] text-slate-400 font-medium">{doc.uploadDate} • {doc.fileSize}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-1 shrink-0">
-                              <button onClick={() => handleAnalyzeDocument(p.id, doc)} className={`p-2 text-xs font-bold rounded-lg transition ${doc.analysis ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`} disabled={analyzingDocId === doc.id}>
-                                {analyzingDocId === doc.id ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-wand-sparkles"></i>}
-                              </button>
-                              <button onClick={() => downloadDocument(doc)} className="p-2 text-slate-400 hover:text-indigo-600 transition">
-                                <i className="fa-solid fa-download"></i>
-                              </button>
-                              <button onClick={() => deleteDocument(p.id, doc.id)} className="p-2 text-slate-400 hover:text-red-500 transition">
-                                <i className="fa-solid fa-trash-can"></i>
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-6 text-slate-400 italic text-xs">Keine Dokumente.</div>
-                      )}
-                    </div>
+                   <div className="text-center p-2 bg-slate-50 rounded-xl">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Einheiten</p>
+                    <p className="text-sm font-bold text-slate-800">{p.units.length}</p>
                   </div>
-                )}
+                  <div className="text-center p-2 bg-slate-50 rounded-xl">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Fläche</p>
+                    <p className="text-sm font-bold text-slate-800">{p.units.reduce((s, u) => s + u.size, 0)} m²</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -254,12 +211,5 @@ const PropertiesList: React.FC<PropertiesListProps> = ({ properties, setProperti
     </div>
   );
 };
-
-const PropertyQuickStat = ({ label, value }: any) => (
-  <div className="text-center p-2 bg-slate-50 rounded-xl">
-    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{label}</p>
-    <p className="text-sm font-bold text-slate-800 truncate">{value}</p>
-  </div>
-);
 
 export default PropertiesList;

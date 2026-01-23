@@ -1,4 +1,18 @@
 
+export enum SubscriptionTier {
+  FREE = 'Free',
+  STANDARD = 'Standard',
+  ENTERPRISE = 'Enterprise'
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  tier: SubscriptionTier;
+  avatarUrl?: string;
+}
+
 export enum HouseType {
   DETACHED = 'Einfamilienhaus',
   SEMI_DETACHED = 'Doppelhaushälfte',
@@ -86,8 +100,8 @@ export interface Unit {
   number: string;
   type: UnitType;
   size: number;
-  rooms?: number; // Neu
-  floor?: string; // Neu
+  rooms?: number;
+  floor?: string;
   baseRent: number;
   utilityPrepayment: number;
   tenantId?: string;

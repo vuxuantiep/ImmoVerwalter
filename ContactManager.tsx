@@ -11,16 +11,25 @@ interface ContactManagerProps {
   setStakeholders: React.Dispatch<React.SetStateAction<Stakeholder[]>>;
   tenants: Tenant[];
   setTenants: React.Dispatch<React.SetStateAction<Tenant[]>>;
+  onCheckLimit: () => boolean;
 }
 
 type ContactTab = 'handymen' | 'owners' | 'stakeholders' | 'tenants';
 
 const ContactManager: React.FC<ContactManagerProps> = ({ 
-  handymen, setHandymen, owners, setOwners, stakeholders, setStakeholders, tenants, setTenants
+  handymen, setHandymen, owners, setOwners, stakeholders, setStakeholders, tenants, setTenants, onCheckLimit
 }) => {
   const [activeTab, setActiveTab] = useState<ContactTab>('handymen');
   const [showAdd, setShowAdd] = useState(false);
   const [formData, setFormData] = useState<any>({});
+
+  const handleShowAdd = () => {
+    if (activeTab === 'owners') {
+      if (!onCheckLimit()) return;
+    }
+    setShowAdd(true);
+    setFormData({});
+  };
 
   const handleAdd = () => {
     const id = Date.now().toString();
@@ -61,12 +70,9 @@ const ContactManager: React.FC<ContactManagerProps> = ({
           <TabButton active={activeTab === 'owners'} onClick={() => { setActiveTab('owners'); setShowAdd(false); }}>
             <i className="fa-solid fa-user-tie mr-2"></i> Vermieter
           </TabButton>
-          <TabButton active={activeTab === 'stakeholders'} onClick={() => { setActiveTab('stakeholders'); setShowAdd(false); }}>
-            <i className="fa-solid fa-briefcase mr-2"></i> Stakeholder
-          </TabButton>
         </div>
         <button 
-          onClick={() => { setShowAdd(true); setFormData({}); }} 
+          onClick={handleShowAdd} 
           className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition"
         >
           <i className="fa-solid fa-plus mr-2"></i> Neu hinzufügen
@@ -86,39 +92,15 @@ const ContactManager: React.FC<ContactManagerProps> = ({
               </>
             ) : (
               <>
-                <InputField label="Ansprechpartner / Name" value={formData.name || ''} onChange={v => setFormData({...formData, name: v})} />
-                {(activeTab === 'handymen' || activeTab === 'owners') && (
-                  <InputField label="Firma" value={formData.company || ''} onChange={v => setFormData({...formData, company: v})} />
-                )}
+                <InputField label="Name" value={formData.name || ''} onChange={v => setFormData({...formData, name: v})} />
               </>
             )}
-
             <InputField label="E-Mail" value={formData.email || ''} onChange={v => setFormData({...formData, email: v})} />
             <InputField label="Telefon" value={formData.phone || ''} onChange={v => setFormData({...formData, phone: v})} />
-
-            {activeTab === 'handymen' && <InputField label="Gewerk" value={formData.trade || ''} onChange={v => setFormData({...formData, trade: v})} />}
-            {activeTab === 'stakeholders' && <InputField label="Rolle (z.B. Versicherung)" value={formData.role || ''} onChange={v => setFormData({...formData, role: v})} />}
-            
-            <div className="lg:col-span-2 grid grid-cols-3 gap-2">
-              <div className="col-span-2">
-                <InputField label="Straße & Nr." value={formData.address || ''} onChange={v => setFormData({...formData, address: v})} />
-              </div>
-              <InputField label="PLZ" value={formData.zip || ''} onChange={v => setFormData({...formData, zip: v})} />
-            </div>
-            <InputField label="Ort" value={formData.city || ''} onChange={v => setFormData({...formData, city: v})} />
-
-            {activeTab === 'owners' && (
-              <>
-                <InputField label="Steuernummer" value={formData.taxId || ''} onChange={v => setFormData({...formData, taxId: v})} />
-                <InputField label="Bankname" value={formData.bankName || ''} onChange={v => setFormData({...formData, bankName: v})} />
-                <InputField label="IBAN" value={formData.iban || ''} onChange={v => setFormData({...formData, iban: v})} />
-                <InputField label="BIC" value={formData.bic || ''} onChange={v => setFormData({...formData, bic: v})} />
-              </>
-            )}
           </div>
           <div className="mt-8 flex space-x-3">
-            <button onClick={handleAdd} className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg transition">Speichern</button>
-            <button onClick={() => setShowAdd(false)} className="px-6 py-3 text-slate-500 font-bold hover:text-slate-800">Abbrechen</button>
+            <button onClick={handleAdd} className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg">Speichern</button>
+            <button onClick={() => setShowAdd(false)} className="px-6 py-3 text-slate-500 font-bold">Abbrechen</button>
           </div>
         </div>
       )}
@@ -133,9 +115,6 @@ const ContactManager: React.FC<ContactManagerProps> = ({
         {activeTab === 'owners' && owners.map(o => (
           <ContactCard key={o.id} title={o.company || o.name} subtitle="Vermieter" phone={o.phone} email={o.email} icon="fa-user-tie" onRemove={() => removeContact(o.id)} />
         ))}
-        {activeTab === 'stakeholders' && stakeholders.map(s => (
-          <ContactCard key={s.id} title={s.name} subtitle={s.role} phone={s.phone} email={s.email} icon="fa-briefcase" onRemove={() => removeContact(s.id)} />
-        ))}
       </div>
     </div>
   );
@@ -148,12 +127,7 @@ const TabButton = ({ active, onClick, children }: any) => (
 const InputField: React.FC<{ label: string, value: string, onChange: (v: string) => void, type?: string }> = ({ label, value, onChange, type = "text" }) => (
   <div className="flex flex-col space-y-1">
     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 tracking-wider">{label}</label>
-    <input 
-      type={type}
-      className="border border-slate-200 p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-sm" 
-      value={value} 
-      onChange={e => onChange(e.target.value)} 
-    />
+    <input type={type} className="border border-slate-200 p-2.5 rounded-xl outline-none bg-white text-sm" value={value} onChange={e => onChange(e.target.value)} />
   </div>
 );
 
@@ -170,8 +144,8 @@ const ContactCard = ({ title, subtitle, phone, email, icon, onRemove }: any) => 
       <button onClick={onRemove} className="p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i className="fa-solid fa-trash-can text-sm"></i></button>
     </div>
     <div className="space-y-2">
-      <a href={`tel:${phone}`} className="flex items-center text-xs text-slate-600 hover:text-indigo-600 transition"><i className="fa-solid fa-phone w-6 text-slate-300"></i><span>{phone || 'Keine Nummer'}</span></a>
-      <a href={`mailto:${email}`} className="flex items-center text-xs text-slate-600 hover:text-indigo-600 transition"><i className="fa-solid fa-envelope w-6 text-slate-300"></i><span className="truncate">{email || 'Keine Mail'}</span></a>
+      <p className="flex items-center text-xs text-slate-600"><i className="fa-solid fa-phone w-6 text-slate-300"></i><span>{phone || 'N/A'}</span></p>
+      <p className="flex items-center text-xs text-slate-600"><i className="fa-solid fa-envelope w-6 text-slate-300"></i><span className="truncate">{email || 'N/A'}</span></p>
     </div>
   </div>
 );

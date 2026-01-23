@@ -4,8 +4,9 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  // Ermöglicht das Hosting in einem Unterverzeichnis wie /ImmoTiep
+  base: '/ImmoTiep/',
   define: {
-    // Ermöglicht den Zugriff auf process.env.API_KEY im Frontend
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY || '')
   },
   build: {

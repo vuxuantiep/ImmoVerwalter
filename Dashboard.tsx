@@ -30,21 +30,41 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, tenants, transactions
     { name: 'Net', value: income - expenses, color: '#6366f1' }
   ];
 
-  const handleCreateEmail = async (reminder: Reminder) => {
-    setIsGeneratingMail(reminder.id);
-    const property = properties.find(p => p.id === reminder.propertyId);
-    const draft = await generateReminderEmail(reminder, property);
-    setMailDraft(draft);
-    setIsGeneratingMail(null);
-  };
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard title="Objekte" value={properties.length.toString()} icon="fa-building" color="text-blue-600" bgColor="bg-blue-100" />
-        <StatCard title="Mieter" value={tenants.length.toString()} icon="fa-users" color="text-purple-600" bgColor="bg-purple-100" />
-        <StatCard title="Belegung" value={`${occupancyRate.toFixed(0)}%`} icon="fa-door-open" color="text-emerald-600" bgColor="bg-emerald-100" />
-        <StatCard title="Cashflow" value={`${(income - expenses).toFixed(0)}€`} icon="fa-euro-sign" color="text-indigo-600" bgColor="bg-indigo-100" />
+        <StatCard 
+          title="Objekte" 
+          value={properties.length.toString()} 
+          icon="fa-building" 
+          color="text-blue-600" 
+          bgColor="bg-blue-100" 
+          onClick={() => setView('properties')}
+        />
+        <StatCard 
+          title="Mieter" 
+          value={tenants.length.toString()} 
+          icon="fa-users" 
+          color="text-purple-600" 
+          bgColor="bg-purple-100" 
+          onClick={() => setView('tenants')}
+        />
+        <StatCard 
+          title="Belegung" 
+          value={`${occupancyRate.toFixed(0)}%`} 
+          icon="fa-door-open" 
+          color="text-emerald-600" 
+          bgColor="bg-emerald-100" 
+          onClick={() => setView('properties')}
+        />
+        <StatCard 
+          title="Cashflow" 
+          value={`${(income - expenses).toFixed(0)}€`} 
+          icon="fa-euro-sign" 
+          color="text-indigo-600" 
+          bgColor="bg-indigo-100" 
+          onClick={() => setView('finances')}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -93,16 +113,6 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, tenants, transactions
           </div>
         </div>
       </div>
-
-      {mailDraft && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 overflow-hidden">
-             <div className="flex justify-between items-center mb-4"><h3 className="font-bold">KI Brief Entwurf</h3><button onClick={() => setMailDraft(null)}><i className="fa-solid fa-xmark"></i></button></div>
-             <div className="bg-slate-50 p-4 rounded-xl text-xs whitespace-pre-wrap max-h-96 overflow-y-auto">{mailDraft}</div>
-             <button onClick={() => setMailDraft(null)} className="w-full mt-4 bg-indigo-600 text-white py-3 rounded-xl text-xs font-bold uppercase">Schließen</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -116,13 +126,16 @@ const QuickActionButton = ({ onClick, icon, label, color, bgColor }: any) => (
   </button>
 );
 
-const StatCard = ({ title, value, icon, color, bgColor }: any) => (
-  <div className="bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+const StatCard = ({ title, value, icon, color, bgColor, onClick }: any) => (
+  <div 
+    onClick={onClick}
+    className="bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all group"
+  >
     <div>
       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{title}</p>
       <h3 className="text-base sm:text-lg font-black text-slate-800">{value}</h3>
     </div>
-    <div className={`${bgColor} ${color} w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center`}>
+    <div className={`${bgColor} ${color} w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
       <i className={`fa-solid ${icon} text-xs sm:text-sm`}></i>
     </div>
   </div>
